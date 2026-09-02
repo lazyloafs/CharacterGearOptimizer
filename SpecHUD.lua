@@ -1,4 +1,4 @@
-﻿-- ============================================================================
+-- ============================================================================
 -- CharacterGearOptimizer: SpecHUD.lua
 -- Draggable, scrollable floating stats HUD with cap breakpoints and
 -- role-specific stat overview.  Only shows caps the user has checked.

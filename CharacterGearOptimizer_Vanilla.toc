@@ -1,4 +1,4 @@
-﻿## Interface: 11506, 11505
+## Interface: 11506, 11505
 ## Title: |cffffd100CharacterGearOptimizer|r
 ## Notes: Multi-version dynamic gear optimization, stat weight evaluator, and equipment manager.
 ## Author: LazyLoafs

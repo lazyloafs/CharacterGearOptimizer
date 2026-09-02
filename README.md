@@ -1,4 +1,4 @@
-﻿# CharacterGearOptimizer (CGO)
+# CharacterGearOptimizer (CGO)
 
 Multi-version dynamic gear optimization, stat weight evaluator, equipment set manager, and in-game HUD for World of Warcraft.
 

@@ -116,7 +116,7 @@ function Options:CreatePanel()
     if line.SetColorTexture then
         line:SetColorTexture(0.55, 0.45, 0.25, 0.6)
     else
-        line:SetTexture(0.55, 0.45, 0.25, 0.6)
+        if line.SetColorTexture then line:SetColorTexture(0.55, 0.45, 0.25, 0.6) else line:SetTexture(0.55, 0.45, 0.25, 0.6) end
     end
 
     local checkboxes = {}

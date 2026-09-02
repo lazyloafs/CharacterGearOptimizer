@@ -1,4 +1,4 @@
-﻿## Interface: 110100, 110007, 120000
+## Interface: 110100, 110007, 120000
 ## Title: |cffffd100CharacterGearOptimizer|r
 ## Notes: Multi-version dynamic gear optimization, stat weight evaluator, and equipment manager.
 ## Author: LazyLoafs

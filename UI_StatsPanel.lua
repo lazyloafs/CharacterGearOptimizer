@@ -1,4 +1,4 @@
-﻿-- ============================================================================
+-- ============================================================================
 -- UI_StatsPanel.lua
 -- Scrollable character-stats panel anchored to the right of CharacterGearOptimizerFrame.
 -- Shows live Primary / Melee / Ranged / Spell / Defence statistics with

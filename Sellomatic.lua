@@ -1,4 +1,4 @@
-﻿-- File: SellOMatic.lua
+-- File: SellOMatic.lua
 -- Merged into CharacterGearOptimizer. All original Sell-O-Matic behavior is
 -- preserved; the only addition is an upgrade-protection layer: items that are
 -- an upgrade for ANY profile (or part of any saved/displayed set) are never
