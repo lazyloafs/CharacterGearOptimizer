@@ -19,6 +19,7 @@ Mainline.lua
 Core.lua
 Scanner.lua
 Optimizer.lua
+Simulation.lua
 EquipManager.lua
 TooltipHook.lua
 

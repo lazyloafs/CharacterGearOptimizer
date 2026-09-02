@@ -418,6 +418,53 @@ local function HandleSlashCommand(msg)
         return
     end
 
+    if command == "sim" or command == "simulate" then
+        if addon.OpenSimulationPanel then
+            addon:OpenSimulationPanel()
+        else
+            print("|cFFFFD700CGO:|r Simulation module initializing...")
+        end
+        return
+    end
+
+    if command == "upgrade" or command == "upgrades" then
+        if addon.Sim and addon.Sim.PredictAllUpgradesInBags then
+            local upgrades = addon.Sim:PredictAllUpgradesInBags()
+            if #upgrades == 0 then
+                print("|cFFFFD700CGO:|r No item upgrades found in your bags.")
+            else
+                print(string.format("|cFFFFD700CGO:|r Found |cff00ff00%d|r upgrade(s) in your bags:", #upgrades))
+                for i = 1, math.min(#upgrades, 5) do
+                    local u = upgrades[i]
+                    print(string.format("  #%d: %s for |cffffd700%s|r (+%.1f / |cff00ff00+%.1f%%|r)",
+                        i, u.link or "?", u.slotName or tostring(u.slot), u.delta, u.pctGain))
+                end
+            end
+        else
+            print("|cFFFFD700CGO:|r Simulation module not loaded.")
+        end
+        return
+    end
+
+    if command == "weak" or command == "weakest" then
+        if addon.Sim and addon.Sim.FindWeakestSlots then
+            local slots = addon.Sim:FindWeakestSlots()
+            if #slots == 0 then
+                print("|cFFFFD700CGO:|r No equipped gear found.")
+            else
+                print("|cFFFFD700CGO:|r Weakest equipped slots (highest upgrade priority):")
+                for i = 1, math.min(#slots, 5) do
+                    local s = slots[i]
+                    print(string.format("  #%d: |cffffd700%s|r - %s (Score: %.1f, Avg: %.1f, |cffff4444-%.1f%%|r)",
+                        i, s.slotName, s.link or "Empty", s.score, s.avgScore, s.pctBelowAvg))
+                end
+            end
+        else
+            print("|cFFFFD700CGO:|r Simulation module not loaded.")
+        end
+        return
+    end
+
     if command == "dev" then
         if _G.DevTool and _G.DevTool.AddData then
             _G.DevTool:AddData(addon, "CharacterGearOptimizer")
@@ -432,6 +479,9 @@ local function HandleSlashCommand(msg)
         print("|cFFFFD700CharacterGearOptimizer|r commands:")
         print("  |cff69ccf0/cgo|r or |cff69ccf0/cgo show|r - Toggle main gear panel")
         print("  |cff69ccf0/cgo config|r or |cff69ccf0/cgo opt|r - Open AddOn Settings menu")
+        print("  |cff69ccf0/cgo sim|r - Open Multi-Set Simulation & Upgrade Prediction UI")
+        print("  |cff69ccf0/cgo upgrade|r - Find top item upgrades in your bags")
+        print("  |cff69ccf0/cgo weak|r - List weakest equipped gear slots")
         print("  |cff69ccf0/cgo hud|r - Toggle floating spec HUD")
         print("  |cff69ccf0/cgo hudreset|r - Reset HUD position to center")
         print("  |cff69ccf0/cgo spec|r - List available specs")

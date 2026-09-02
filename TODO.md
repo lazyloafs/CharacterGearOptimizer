@@ -24,5 +24,5 @@
 
 ### Phase 4: Future Enhancements
 - [x] Pawn string import and export parser
-- [ ] Multi-set simulation and item upgrade prediction
+- [x] Multi-set simulation and item upgrade prediction
 - [ ] Cloud sync profile integration

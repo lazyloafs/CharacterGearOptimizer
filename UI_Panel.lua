@@ -2040,8 +2040,8 @@ end)
 
 -- [Stat Weights] button
 local statsBtn = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
-statsBtn:SetSize(70, 22)
-statsBtn:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -10, 8)
+statsBtn:SetSize(68, 22)
+statsBtn:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -8, 8)
 statsBtn:SetText("Weights")
 statsBtn:SetScript("OnClick", function()
     if statEditor:IsShown() then
@@ -2084,14 +2084,25 @@ end)
 
 -- [Re-Scan] button
 local reloadBtn = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
-reloadBtn:SetSize(80, 22)
-reloadBtn:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", 10, 8)
+reloadBtn:SetSize(72, 22)
+reloadBtn:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", 8, 8)
 reloadBtn:SetText("Re-Scan")
 reloadBtn:SetScript("OnClick", function()
     RefreshCurrentOptimization()
 end)
 
--- [Update Set] button â€” dropdown to overwrite an existing saved set
+-- [Simulate] button -- opens Multi-Set Simulation & Upgrade Prediction panel
+local simBtn = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
+simBtn:SetSize(72, 22)
+simBtn:SetPoint("LEFT", reloadBtn, "RIGHT", 5, 0)
+simBtn:SetText("Simulate")
+simBtn:SetScript("OnClick", function()
+    if addon.OpenSimulationPanel then
+        addon:OpenSimulationPanel()
+    end
+end)
+
+-- [Update Set] button — dropdown to overwrite an existing saved set
 local updateSetBtn = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
 updateSetBtn:SetSize(86, 22)
 updateSetBtn:SetPoint("BOTTOM", frame, "BOTTOM", 0, 32)
@@ -2129,8 +2140,8 @@ end)
 
 -- [Save Set] button (prompts for name)
 local equipBtn = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
-equipBtn:SetSize(86, 22)
-equipBtn:SetPoint("BOTTOM", frame, "BOTTOM", 0, 8)
+equipBtn:SetSize(76, 22)
+equipBtn:SetPoint("LEFT", simBtn, "RIGHT", 5, 0)
 equipBtn:SetText("Save Set")
 equipBtn:SetScript("OnClick", function()
     if not addon.currentClass or not addon.currentSpecIdx then
