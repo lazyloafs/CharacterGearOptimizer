@@ -26,3 +26,6 @@
 - [x] Pawn string import and export parser
 - [x] Multi-set simulation and item upgrade prediction
 - [x] Cloud sync profile integration
+
+### Phase 5: Options UI Dropdown Controls & Optimization Preset Config
+- [x] In-game Options UI dropdown selectors (Active Profile / Spec Selector, Auto-Roll Policy, Optimization Strategy) and comprehensive settings control in `Options.lua`
