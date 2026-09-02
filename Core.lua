@@ -353,10 +353,41 @@ local function HandleSlashCommand(msg)
     end
 
     if command == "import" then
-        if _G["CGOImportDialog"] then
+        if addon.OpenImportDialog then
+            addon:OpenImportDialog()
+        elseif _G["CGOImportDialog"] then
             _G["CGOImportDialog"]:Show()
         else
             print("|cFFFFD700CGO:|r Import dialog not available. Open the gear panel first.")
+        end
+        return
+    end
+
+    if command == "export" or command == "pawn" then
+        local format = (command == "pawn") and "pawn" or (rest ~= "" and rest:lower() or "pawn")
+        local _, class = UnitClass("player")
+        local specIdx = addon.currentSpecIdx or addon.autoDetectedSpecIdx or 1
+        local specData = addon.CLASS_SPECS and addon.CLASS_SPECS[class] and addon.CLASS_SPECS[class][specIdx]
+        local profileName = specData and specData.name or "Active Spec"
+        local weights = specData and specData.weights or {}
+        if addon.currentCustomProfile then
+            profileName = addon.currentCustomProfile.name or profileName
+            weights = addon.currentCustomProfile.weights or weights
+        end
+
+        if addon.OpenExportDialog then
+            addon:OpenExportDialog(profileName, weights, format)
+        elseif _G["CGOExportDialog"] and _G["CGOExportDialog"].Open then
+            _G["CGOExportDialog"]:Open(profileName, weights, format)
+        else
+            -- Fallback: print to chat if UI dialog isn't loaded
+            local exported = addon.ExportWeights and addon:ExportWeights(weights, format, profileName, class, specIdx)
+            if exported then
+                print("|cFFFFD700CGO Export (" .. format:upper() .. "):|r")
+                print(exported)
+            else
+                print("|cFFFFD700CGO:|r Export dialog not available. Open the gear panel first.")
+            end
         end
         return
     end
@@ -407,6 +438,9 @@ local function HandleSlashCommand(msg)
         print("  |cff69ccf0/cgo spec <#>|r - Switch to spec by number")
         print("  |cff69ccf0/cgo auto|r - Revert to auto-detect spec")
         print("  |cff69ccf0/cgo best|r - Scan bags for best gear")
+        print("  |cff69ccf0/cgo import|r - Open stat weights import dialog")
+        print("  |cff69ccf0/cgo export [pawn|simc|json]|r - Open stat weights export dialog")
+        print("  |cff69ccf0/cgo pawn|r - Quick export weights in Pawn format")
         print("  |cff69ccf0/cgo autoroll|r - Toggle auto loot rolls")
         print("  |cff69ccf0/cgo dev|r - Register table in DevTool")
         local _, playerClass = UnitClass("player")

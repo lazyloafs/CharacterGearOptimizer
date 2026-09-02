@@ -439,84 +439,31 @@ statEditor:SetScript("OnMouseWheel", function(self, delta)
 end)
 
 -- ============================================================================
--- IMPORT STAT WEIGHTS (JSON / SimC / Pawn / key=value)
+-- IMPORT & EXPORT STAT WEIGHTS (Pawn / SimC / JSON)
 -- ============================================================================
-local IMPORT_STAT_MAP = {
-    -- JSON / camelCase names (TBC-era stats)
-    strength        = "STR",    str           = "STR",
-    agility         = "AGI",    agi           = "AGI",
-    stamina         = "STA",    sta           = "STA",
-    intellect       = "INT",    int           = "INT",
-    spirit          = "SPI",    spi           = "SPI",
-    attackpower     = "AP",     attack_power  = "AP",     ap  = "AP",
-    feralattackpower = "FAP",   feral_attack_power = "FAP", fap = "FAP",
-    spellpower      = "SP",     spell_power   = "SP",     sp  = "SP",
-    healing         = "HEAL",   heal          = "HEAL",
-    mp5             = "MP5",    manaregen     = "MP5",    mana_per_5 = "MP5",
-    hitrating       = "HIT",    hit_rating    = "HIT",    hit = "HIT",
-    spellhitrating  = "SPELLHIT", spell_hit_rating = "SPELLHIT", spellhit = "SPELLHIT",
-    critrating      = "CRIT",   crit_rating   = "CRIT",   crit = "CRIT",
-    spellcritrating = "SPELLCRIT", spell_crit_rating = "SPELLCRIT", spellcrit = "SPELLCRIT",
-    meleecritrating = "MELEECRIT", melee_crit_rating = "MELEECRIT", meleecrit = "MELEECRIT",
-    hasterating     = "HASTE",  haste_rating  = "HASTE",  haste = "HASTE",
-    expertiserating = "EXP",    expertise_rating = "EXP",  expertise = "EXP", exp = "EXP",
-    defenserating   = "DEF",    defense_rating = "DEF",   defense = "DEF",   def = "DEF",
-    dodgerating     = "DODGE",  dodge_rating  = "DODGE",  dodge = "DODGE",
-    parryrating     = "PARRY",  parry_rating  = "PARRY",  parry = "PARRY",
-    resiliencerating = "RESIL", resilience_rating = "RESIL", resilience = "RESIL", resil = "RESIL",
-    armorpenetration = "ARP",   armor_penetration = "ARP", arp = "ARP",
-    blockrating     = "BLOCK_RATING", block_rating = "BLOCK_RATING",
-    blockvalue      = "BLOCK_VALUE",  block_value  = "BLOCK_VALUE",
-    armor           = "ARMOR",
-    spellpenetration = "SPELL_PEN", spell_penetration = "SPELL_PEN", spell_pen = "SPELL_PEN",
-    pvppower        = "PVP_POWER",  pvp_power     = "PVP_POWER",  pvp = "PVP_POWER",
-    pvepower        = "PVE_POWER",  pve_power     = "PVE_POWER",  pve = "PVE_POWER",
-    weapondps       = "WEAPON_DPS", weapon_dps    = "WEAPON_DPS",
-}
 
 local function ParseImportString(input)
     if not input or input == "" then return nil end
-
-    local weights = {}
-
-    -- Strip Pawn header:  ( Pawn: v1: "ProfileName": ... )
-    local pawnBody = input:match('Pawn:%s*v%d+:%s*"[^"]*":%s*(.*)')
-    if pawnBody then
-        pawnBody = pawnBody:gsub('%s*%)%s*$', '')
-        input = pawnBody
-    end
-
-    -- Strip comment lines (# or //)
-    input = input:gsub('#[^\n]*', '')
-    input = input:gsub('//[^\n]*', '')
-
-    -- Try JSON format: "key": value  or  "key": "value"
-    for key, val in input:gmatch('"([%w_]+)"%s*:%s*"?([%-]?%d+%.?%d*)"?') do
-        local num = tonumber(val)
-        if num then
-            local mapped = IMPORT_STAT_MAP[key:lower()]
-            if mapped then weights[mapped] = num end
+    if addon.ImportWeights then
+        local weights, metadata = addon:ImportWeights(input)
+        if weights and next(weights) then
+            return weights, metadata
         end
     end
-
-    -- Try SimC / key=value format
-    if not next(weights) then
-        for key, val in input:gmatch('([%w_]+)%s*=%s*([%-]?%d+%.?%d*)') do
-            local num = tonumber(val)
-            if num then
-                local mapped = IMPORT_STAT_MAP[key:lower()]
-                if mapped then weights[mapped] = num end
-            end
+    if addon.StatCalc and addon.StatCalc.ImportWeights then
+        local weights, metadata = addon.StatCalc:ImportWeights(input)
+        if weights and next(weights) then
+            return weights, metadata
         end
     end
-
-    if not next(weights) then return nil end
-    return weights
+    return nil
 end
 
+-- ----------------------------------------------------------------------------
 -- Import Dialog
+-- ----------------------------------------------------------------------------
 local importDialog = CreateFrame("Frame", "CGOImportDialog", UIParent, BACKDROP_TEMPLATE)
-importDialog:SetSize(340, 240)
+importDialog:SetSize(360, 260)
 importDialog:SetPoint("CENTER", UIParent, "CENTER", 0, 60)
 importDialog:SetFrameStrata("FULLSCREEN_DIALOG")
 importDialog:SetMovable(true)
@@ -539,22 +486,24 @@ impTitle:SetText("|cFFFFD700Import Stat Weights|r")
 
 local impHint = importDialog:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
 impHint:SetPoint("TOP", impTitle, "BOTTOM", 0, -4)
-impHint:SetText("|cFFAAAAAAPaste JSON, SimC, or Pawn string below|r")
+impHint:SetText("|cFFAAAAAAPaste Pawn, SimC, or JSON string below|r")
 
 local impScrollFrame = CreateFrame("ScrollFrame", "CGOImportScroll", importDialog, "UIPanelScrollFrameTemplate")
-impScrollFrame:SetPoint("TOPLEFT", importDialog, "TOPLEFT", 12, -50)
-impScrollFrame:SetPoint("BOTTOMRIGHT", importDialog, "BOTTOMRIGHT", -30, 50)
+impScrollFrame:SetPoint("TOPLEFT", importDialog, "TOPLEFT", 14, -54)
+impScrollFrame:SetPoint("BOTTOMRIGHT", importDialog, "BOTTOMRIGHT", -32, 54)
 
 local impEditBox = CreateFrame("EditBox", "CGOImportEditBox", impScrollFrame)
 impEditBox:SetMultiLine(true)
 impEditBox:SetAutoFocus(false)
 impEditBox:SetFontObject(ChatFontNormal)
-impEditBox:SetWidth(280)
+impEditBox:SetWidth(290)
 impEditBox:SetScript("OnEscapePressed", function(self) self:ClearFocus() end)
 impScrollFrame:SetScrollChild(impEditBox)
 
 local impStatusLine = importDialog:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-impStatusLine:SetPoint("BOTTOM", importDialog, "BOTTOM", 0, 34)
+impStatusLine:SetPoint("BOTTOM", importDialog, "BOTTOM", 0, 36)
+impStatusLine:SetJustifyH("CENTER")
+impStatusLine:SetWidth(330)
 
 local impOK = CreateFrame("Button", nil, importDialog, "UIPanelButtonTemplate")
 impOK:SetSize(90, 22)
@@ -562,8 +511,8 @@ impOK:SetPoint("BOTTOMRIGHT", importDialog, "BOTTOM", -4, 8)
 impOK:SetText("Import")
 impOK:SetScript("OnClick", function()
     local text = impEditBox:GetText()
-    local parsed = ParseImportString(text)
-    if not parsed then
+    local parsed, meta = ParseImportString(text)
+    if not parsed or not next(parsed) then
         impStatusLine:SetText("|cFFFF4444Could not parse any stat weights.|r")
         return
     end
@@ -584,13 +533,17 @@ impOK:SetScript("OnClick", function()
         end
     end
 
-    impStatusLine:SetText(string.format("|cFF00FF00Imported %d stats successfully!|r", count))
+    local scaleInfo = ""
+    if meta and meta.scaleName then
+        scaleInfo = string.format(" (\"%s\")", meta.scaleName)
+    end
+    impStatusLine:SetText(string.format("|cFF00FF00Imported %d stats%s!|r", count, scaleInfo))
 end)
 
 local impCancel = CreateFrame("Button", nil, importDialog, "UIPanelButtonTemplate")
 impCancel:SetSize(90, 22)
 impCancel:SetPoint("BOTTOMLEFT", importDialog, "BOTTOM", 4, 8)
-impCancel:SetText("Cancel")
+impCancel:SetText("Close")
 impCancel:SetScript("OnClick", function() importDialog:Hide() end)
 
 importDialog:SetScript("OnShow", function()
@@ -599,19 +552,120 @@ importDialog:SetScript("OnShow", function()
     impEditBox:SetFocus()
 end)
 
--- Import button in stat editor
-local seImport = CreateFrame("Button", nil, statEditor, "UIPanelButtonTemplate")
-seImport:SetSize(66, 20)
-seImport:SetPoint("BOTTOM", statEditor, "BOTTOM", 0, 4)
-seImport:SetText("Import")
-seImport:SetScript("OnClick", function()
-    importDialog:Show()
+-- ----------------------------------------------------------------------------
+-- Export Dialog
+-- ----------------------------------------------------------------------------
+local exportDialog = CreateFrame("Frame", "CGOExportDialog", UIParent, BACKDROP_TEMPLATE)
+exportDialog:SetSize(380, 280)
+exportDialog:SetPoint("CENTER", UIParent, "CENTER", 0, 60)
+exportDialog:SetFrameStrata("FULLSCREEN_DIALOG")
+exportDialog:SetMovable(true)
+exportDialog:EnableMouse(true)
+exportDialog:RegisterForDrag("LeftButton")
+exportDialog:SetScript("OnDragStart", exportDialog.StartMoving)
+exportDialog:SetScript("OnDragStop", exportDialog.StopMovingOrSizing)
+exportDialog:Hide()
+
+ApplyBackdrop(exportDialog, {
+    bgFile   = "Interface/DialogFrame/UI-DialogBox-Background",
+    edgeFile = "Interface/DialogFrame/UI-DialogBox-Border",
+    tile = true, tileSize = 32, edgeSize = 16,
+    insets = { left = 4, right = 4, top = 4, bottom = 4 },
+}, { 0.1, 0.1, 0.1, 0.95 }, nil)
+
+local expTitle = exportDialog:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+expTitle:SetPoint("TOP", exportDialog, "TOP", 0, -14)
+expTitle:SetText("|cFFFFD700Export Stat Weights|r")
+
+local expHint = exportDialog:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+expHint:SetPoint("TOP", expTitle, "BOTTOM", 0, -4)
+expHint:SetText("|cFFAAAAAAPress Ctrl+C to copy your stat weights|r")
+
+local expCurrentFormat = "pawn"
+local expWeights = nil
+local expProfileName = nil
+
+local expScrollFrame = CreateFrame("ScrollFrame", "CGOExportScroll", exportDialog, "UIPanelScrollFrameTemplate")
+expScrollFrame:SetPoint("TOPLEFT", exportDialog, "TOPLEFT", 14, -64)
+expScrollFrame:SetPoint("BOTTOMRIGHT", exportDialog, "BOTTOMRIGHT", -32, 46)
+
+local expEditBox = CreateFrame("EditBox", "CGOExportEditBox", expScrollFrame)
+expEditBox:SetMultiLine(true)
+expEditBox:SetAutoFocus(false)
+expEditBox:SetFontObject(ChatFontNormal)
+expEditBox:SetWidth(310)
+expEditBox:SetScript("OnEscapePressed", function(self) self:ClearFocus() end)
+expScrollFrame:SetScrollChild(expEditBox)
+
+local function RefreshExportText()
+    local w = expWeights or customWeights or {}
+    local name = expProfileName or "Current"
+    local text = ""
+    if addon.ExportWeights then
+        text = addon:ExportWeights(w, expCurrentFormat, name, addon.currentClass, addon.currentSpecIdx)
+    elseif addon.StatCalc and addon.StatCalc.ExportWeights then
+        text = addon.StatCalc:ExportWeights(w, expCurrentFormat, name, addon.currentClass, addon.currentSpecIdx)
+    end
+    expEditBox:SetText(text or "")
+    expEditBox:SetFocus()
+    expEditBox:HighlightText()
+end
+
+local btnPawn = CreateFrame("Button", nil, exportDialog, "UIPanelButtonTemplate")
+btnPawn:SetSize(60, 20)
+btnPawn:SetPoint("TOPLEFT", exportDialog, "TOPLEFT", 14, -38)
+btnPawn:SetText("Pawn")
+btnPawn:SetScript("OnClick", function()
+    expCurrentFormat = "pawn"
+    RefreshExportText()
 end)
 
--- Apply button at bottom of stat editor
+local btnSimC = CreateFrame("Button", nil, exportDialog, "UIPanelButtonTemplate")
+btnSimC:SetSize(60, 20)
+btnSimC:SetPoint("LEFT", btnPawn, "RIGHT", 6, 0)
+btnSimC:SetText("SimC")
+btnSimC:SetScript("OnClick", function()
+    expCurrentFormat = "simc"
+    RefreshExportText()
+end)
+
+local btnJSON = CreateFrame("Button", nil, exportDialog, "UIPanelButtonTemplate")
+btnJSON:SetSize(60, 20)
+btnJSON:SetPoint("LEFT", btnSimC, "RIGHT", 6, 0)
+btnJSON:SetText("JSON")
+btnJSON:SetScript("OnClick", function()
+    expCurrentFormat = "json"
+    RefreshExportText()
+end)
+
+local expClose = CreateFrame("Button", nil, exportDialog, "UIPanelButtonTemplate")
+expClose:SetSize(80, 22)
+expClose:SetPoint("BOTTOM", exportDialog, "BOTTOM", 0, 10)
+expClose:SetText("Close")
+expClose:SetScript("OnClick", function() exportDialog:Hide() end)
+
+function exportDialog:Open(profileName, weights, format)
+    if format then expCurrentFormat = format end
+    expProfileName = profileName
+    expWeights = weights
+    exportDialog:Show()
+    RefreshExportText()
+end
+
+function addon:OpenExportDialog(profileName, weights, format)
+    exportDialog:Open(profileName, weights, format)
+end
+
+function addon:OpenImportDialog()
+    importDialog:Show()
+end
+
+-- ============================================================================
+-- STAT EDITOR BUTTONS (Apply / Import / Export / Save Stats)
+-- ============================================================================
 local seApply = CreateFrame("Button", nil, statEditor, "UIPanelButtonTemplate")
-seApply:SetSize(60, 20)
-seApply:SetPoint("BOTTOMLEFT", statEditor, "BOTTOMLEFT", 5, 4)
+seApply:SetSize(44, 20)
+seApply:SetPoint("BOTTOMLEFT", statEditor, "BOTTOMLEFT", 4, 4)
 seApply:SetText("Apply")
 seApply:SetScript("OnClick", function()
     -- Commit editbox values
@@ -624,12 +678,10 @@ seApply:SetScript("OnClick", function()
 
     -- Apply custom weights to the current specData
     if addon.currentCustomProfile then
-        -- Update the custom profile weights in-place
         addon.currentCustomProfile.weights = {}
         for k, v in pairs(customWeights) do
             if v ~= 0 then addon.currentCustomProfile.weights[k] = v end
         end
-        -- Also persist to DB
         local pName = addon.currentCustomProfile.name
         if pName and CharacterGearOptimizerDB and CharacterGearOptimizerDB.customStats then
             CharacterGearOptimizerDB.customStats[pName] = {}
@@ -637,7 +689,6 @@ seApply:SetScript("OnClick", function()
                 CharacterGearOptimizerDB.customStats[pName][k] = v
             end
         end
-        -- Re-run optimization
         local bestSet = OptimizeForCustomProfile(addon.currentCustomProfile)
         addon.currentBestSet = bestSet
         addon:PopulateSlots(bestSet)
@@ -651,7 +702,6 @@ seApply:SetScript("OnClick", function()
                 end
             end
 
-            -- Re-run optimization
             local bestSet = addon:GetBestGearForSpec(addon.currentClass, addon.currentSpecIdx)
             if bestSet then
                 addon.currentBestSet = bestSet
@@ -662,13 +712,40 @@ seApply:SetScript("OnClick", function()
     statEditor:Hide()
 end)
 
--- Save As button in stat editor â€” saves a named custom stats profile
+local seImport = CreateFrame("Button", nil, statEditor, "UIPanelButtonTemplate")
+seImport:SetSize(44, 20)
+seImport:SetPoint("LEFT", seApply, "RIGHT", 2, 0)
+seImport:SetText("Import")
+seImport:SetScript("OnClick", function()
+    importDialog:Show()
+end)
+
+local seExport = CreateFrame("Button", nil, statEditor, "UIPanelButtonTemplate")
+seExport:SetSize(44, 20)
+seExport:SetPoint("LEFT", seImport, "RIGHT", 2, 0)
+seExport:SetText("Export")
+seExport:SetScript("OnClick", function()
+    for _, row in ipairs(statRows) do
+        if row:IsShown() and row.stat then
+            local num = tonumber(row.editBox:GetText()) or 0
+            customWeights[row.stat] = num
+        end
+    end
+    local profileName = "Custom"
+    if addon.currentCustomProfile and addon.currentCustomProfile.name then
+        profileName = addon.currentCustomProfile.name
+    elseif addon.currentClass and addon.currentSpecIdx and addon.CLASS_SPECS and addon.CLASS_SPECS[addon.currentClass] then
+        local s = addon.CLASS_SPECS[addon.currentClass][addon.currentSpecIdx]
+        if s and s.name then profileName = s.name end
+    end
+    exportDialog:Open(profileName, customWeights, "pawn")
+end)
+
 local seSaveAs = CreateFrame("Button", nil, statEditor, "UIPanelButtonTemplate")
-seSaveAs:SetSize(66, 20)
-seSaveAs:SetPoint("BOTTOMRIGHT", statEditor, "BOTTOMRIGHT", -5, 4)
-seSaveAs:SetText("Save Stats")
+seSaveAs:SetSize(48, 20)
+seSaveAs:SetPoint("LEFT", seExport, "RIGHT", 2, 0)
+seSaveAs:SetText("Save")
 seSaveAs:SetScript("OnClick", function()
-    -- Commit editbox values first
     for _, row in ipairs(statRows) do
         if row:IsShown() and row.stat then
             local num = tonumber(row.editBox:GetText()) or 0
@@ -676,7 +753,6 @@ seSaveAs:SetScript("OnClick", function()
         end
     end
 
-    -- Reuse the name dialog to ask for a profile name
     local dialog = _G["CGONameDialog"]
     local input  = _G["CGONameInput"]
     if not dialog or not input then return end
@@ -686,7 +762,6 @@ seSaveAs:SetScript("OnClick", function()
     input:SetFocus()
     input:HighlightText()
 
-    -- Temporarily override the Save button to save a custom stats profile
     local nameOKBtn = dialog.saveBtn
     if nameOKBtn then
         nameOKBtn:SetScript("OnClick", function()
@@ -696,7 +771,6 @@ seSaveAs:SetScript("OnClick", function()
 
             CharacterGearOptimizerDB.customStats = CharacterGearOptimizerDB.customStats or {}
 
-            -- Build the weights table
             local weights = {}
             for k, v in pairs(customWeights) do
                 if v ~= 0 then weights[k] = v end
@@ -705,7 +779,6 @@ seSaveAs:SetScript("OnClick", function()
             CharacterGearOptimizerDB.customStats[profileName] = weights
             print("|cFFFFD700CharacterGearOptimizer:|r Saved custom stats profile: |cFF00FF00" .. profileName .. "|r")
 
-            -- Restore the Save button to its normal Save Set behaviour
             addon:RestoreNameDialogSaveHook()
         end)
     end

@@ -153,3 +153,414 @@ end
 addon.GetArmorDR = function(self, armor, level)
     return StatCalc:GetArmorDR(armor, level)
 end
+
+-- ============================================================================
+-- PAWN STRING IMPORT & EXPORT PARSER ENGINE
+-- ============================================================================
+StatCalc.PAWN_STAT_IMPORT_MAP = {
+    -- Primary Stats
+    strength             = "STR",
+    str                  = "STR",
+    agility              = "AGI",
+    agi                  = "AGI",
+    stamina              = "STA",
+    sta                  = "STA",
+    intellect            = "INT",
+    int                  = "INT",
+    spirit               = "SPI",
+    spi                  = "SPI",
+
+    -- Attack & Spell Power / Regen
+    ap                   = "AP",
+    attackpower          = "AP",
+    attack_power         = "AP",
+    rap                  = "AP",
+    rangedattackpower    = "AP",
+    ranged_attack_power  = "AP",
+    feralap              = "FAP",
+    feralattackpower     = "FAP",
+    feral_attack_power   = "FAP",
+    sp                   = "SP",
+    spellpower           = "SP",
+    spell_power          = "SP",
+    spelldamage          = "SP",
+    spell_damage         = "SP",
+    damageandhealing     = "SP",
+    healing              = "HEAL",
+    heal                 = "HEAL",
+    mp5                  = "MP5",
+    manaregen            = "MP5",
+    mana_per_5           = "MP5",
+
+    -- Combat Ratings: Hit / Crit / Haste / Expertise
+    hitrating            = "HIT",
+    hit_rating           = "HIT",
+    hit                  = "HIT",
+    spellhitrating       = "SPELLHIT",
+    spell_hit_rating     = "SPELLHIT",
+    spellhit             = "SPELLHIT",
+    critrating           = "CRIT",
+    crit_rating          = "CRIT",
+    crit                 = "CRIT",
+    meleecritrating      = "MELEECRIT",
+    melee_crit_rating    = "MELEECRIT",
+    meleecrit            = "MELEECRIT",
+    spellcritrating      = "SPELLCRIT",
+    spell_crit_rating    = "SPELLCRIT",
+    spellcrit            = "SPELLCRIT",
+    hasterating          = "HASTE",
+    haste_rating         = "HASTE",
+    haste                = "HASTE",
+    spellhaste           = "HASTE",
+    spellhasterating     = "HASTE",
+    meleehaste           = "HASTE",
+    meleehasterating     = "HASTE",
+    expertiserating      = "EXP",
+    expertise_rating     = "EXP",
+    expertise            = "EXP",
+    exp                  = "EXP",
+
+    -- Defensive & Tank Stats
+    defenserating        = "DEF",
+    defense_rating       = "DEF",
+    defense              = "DEF",
+    def                  = "DEF",
+    dodgerating          = "DODGE",
+    dodge_rating         = "DODGE",
+    dodge                = "DODGE",
+    parryrating          = "PARRY",
+    parry_rating         = "PARRY",
+    parry                = "PARRY",
+    resiliencerating     = "RESIL",
+    resilience_rating    = "RESIL",
+    resilience           = "RESIL",
+    resil                = "RESIL",
+    armorpenetration     = "ARP",
+    armorpenetrationrating = "ARP",
+    armor_penetration    = "ARP",
+    arp                  = "ARP",
+    blockrating          = "BLOCK_RATING",
+    block_rating         = "BLOCK_RATING",
+    block                = "BLOCK_RATING",
+    blockvalue           = "BLOCK_VALUE",
+    block_value          = "BLOCK_VALUE",
+    bv                   = "BLOCK_VALUE",
+    armor                = "ARMOR",
+    bonusarmor           = "ARMOR",
+    spellpenetration     = "SPELL_PEN",
+    spell_penetration    = "SPELL_PEN",
+    spellpen             = "SPELL_PEN",
+
+    -- Ascension / Retail / Misc Stats
+    pvppower             = "PVP_POWER",
+    pvp_power            = "PVP_POWER",
+    pvp                  = "PVP_POWER",
+    pvepower             = "PVE_POWER",
+    pve_power            = "PVE_POWER",
+    pve                  = "PVE_POWER",
+    dps                  = "WEAPON_DPS",
+    weapondps            = "WEAPON_DPS",
+    weapon_dps           = "WEAPON_DPS",
+    mastery              = "MASTERY",
+    masteryrating        = "MASTERY",
+    versatility          = "VERSATILITY",
+    vers                 = "VERSATILITY",
+}
+
+StatCalc.PAWN_STAT_EXPORT_KEYS = {
+    STR          = "Strength",
+    AGI          = "Agility",
+    STA          = "Stamina",
+    INT          = "Intellect",
+    SPI          = "Spirit",
+    AP           = "Ap",
+    FAP          = "FeralAp",
+    SP           = "SpellPower",
+    HEAL         = "Healing",
+    MP5          = "Mp5",
+    HIT          = "HitRating",
+    SPELLHIT     = "SpellHitRating",
+    CRIT         = "CritRating",
+    SPELLCRIT    = "SpellCritRating",
+    MELEECRIT    = "MeleeCritRating",
+    HASTE        = "HasteRating",
+    EXP          = "ExpertiseRating",
+    DEF          = "DefenseRating",
+    DODGE        = "DodgeRating",
+    PARRY        = "ParryRating",
+    RESIL        = "ResilienceRating",
+    ARP          = "ArmorPenetration",
+    BLOCK_RATING = "BlockRating",
+    BLOCK_VALUE  = "BlockValue",
+    ARMOR        = "Armor",
+    SPELL_PEN    = "SpellPenetration",
+    PVP_POWER    = "PvPPower",
+    PVE_POWER    = "PvEPower",
+    WEAPON_DPS   = "Dps",
+    MASTERY      = "MasteryRating",
+    VERSATILITY  = "Versatility",
+}
+
+StatCalc.PAWN_CANONICAL_ORDER = {
+    "STR", "AGI", "STA", "INT", "SPI",
+    "AP", "FAP", "SP", "HEAL", "MP5",
+    "HIT", "SPELLHIT", "CRIT", "SPELLCRIT", "MELEECRIT", "HASTE", "EXP",
+    "DEF", "DODGE", "PARRY", "RESIL", "ARP",
+    "BLOCK_RATING", "BLOCK_VALUE", "ARMOR", "SPELL_PEN",
+    "PVP_POWER", "PVE_POWER", "WEAPON_DPS", "MASTERY", "VERSATILITY"
+}
+
+addon.PAWN_STAT_IMPORT_MAP = StatCalc.PAWN_STAT_IMPORT_MAP
+addon.PAWN_STAT_EXPORT_KEYS = StatCalc.PAWN_STAT_EXPORT_KEYS
+
+--- Parse a standard Pawn string: ( Pawn: v1: "ScaleName": Class=..., Stat=1.23, ... )
+function StatCalc:ParsePawnString(input)
+    if not input or type(input) ~= "string" or input == "" then
+        return nil, nil, nil
+    end
+
+    local clean = input:match("^%s*(.-)%s*$")
+    local scaleName = nil
+    local metadata = {}
+    local weights = {}
+
+    -- Extract Pawn scale name: ( Pawn: v1: "ScaleName": ... ) or Pawn: v1: "ScaleName": ...
+    local nameMatch, bodyMatch = clean:match('^[%(%s]*[Pp][Aa][Ww][Nn]:%s*[Vv]%d+:%s*"([^"]+)"%s*:%s*(.*)')
+    if not nameMatch then
+        nameMatch, bodyMatch = clean:match('^[%(%s]*"([^"]+)"%s*:%s*(.*)')
+    end
+
+    if nameMatch then
+        scaleName = nameMatch
+        clean = bodyMatch or clean
+    end
+
+    -- Strip trailing parenthesis or whitespace
+    clean = clean:gsub('%)%s*$', '')
+
+    -- Parse key=value or key: value pairs
+    for token in clean:gmatch("([^,]+)") do
+        local key, val = token:match("([^:=]+)%s*[:=]%s*(.+)")
+        if key and val then
+            key = key:match("^%s*(.-)%s*$")
+            val = val:match("^%s*(.-)%s*$")
+            -- Strip wrapping quotes if any
+            val = val:gsub('^"', ''):gsub('"$', '')
+
+            local num = tonumber(val)
+            local lkey = key:lower():gsub("[%s_%-]", "")
+            if num then
+                local internalKey = StatCalc.PAWN_STAT_IMPORT_MAP[lkey]
+                if internalKey then
+                    weights[internalKey] = num
+                else
+                    metadata[key] = num
+                end
+            else
+                metadata[key] = val
+            end
+        end
+    end
+
+    -- If no key=value comma pairs matched, fallback to regex search
+    if not next(weights) then
+        for key, val in clean:gmatch('([%w_]+)%s*=%s*([%-]?%d+%.?%d*)') do
+            local num = tonumber(val)
+            local internalKey = StatCalc.PAWN_STAT_IMPORT_MAP[key:lower():gsub("[%s_%-]", "")]
+            if num and internalKey then
+                weights[internalKey] = num
+            end
+        end
+    end
+
+    metadata.scaleName = scaleName
+    if metadata.Class then
+        metadata.className = metadata.Class
+    end
+
+    if not next(weights) then
+        return nil, metadata, scaleName
+    end
+
+    return weights, metadata, scaleName
+end
+
+--- Create a valid, standard Pawn scale string from stat weights
+function StatCalc:CreatePawnString(weights, scaleName, metadata)
+    if type(weights) ~= "table" then return "" end
+
+    scaleName = scaleName or (addon.currentCustomProfile and addon.currentCustomProfile.name) or "CGO Custom"
+    scaleName = tostring(scaleName):gsub('"', "'")
+
+    local parts = {}
+
+    -- Include class metadata if available
+    local className = nil
+    if type(metadata) == "table" and metadata.Class then
+        className = metadata.Class
+    elseif type(metadata) == "string" and metadata ~= "" then
+        className = metadata
+    elseif addon.currentClass then
+        className = addon.currentClass
+    end
+
+    if className then
+        -- Normalize class name to Title Case for Pawn convention
+        local titleClass = className:sub(1,1):upper() .. className:sub(2):lower()
+        if className == "DEATHKNIGHT" then titleClass = "DeathKnight" end
+        table.insert(parts, "Class=" .. titleClass)
+    end
+
+    if type(metadata) == "table" and metadata.Spec then
+        table.insert(parts, "Spec=" .. tostring(metadata.Spec))
+    end
+
+    -- Append non-zero stat weights in canonical order
+    local handled = {}
+    for _, statKey in ipairs(StatCalc.PAWN_CANONICAL_ORDER) do
+        local val = tonumber(weights[statKey])
+        if val and val ~= 0 then
+            local pawnKey = StatCalc.PAWN_STAT_EXPORT_KEYS[statKey] or statKey
+            local formattedVal = string.format("%.2f", val):gsub("%.?0+$", "")
+            table.insert(parts, pawnKey .. "=" .. formattedVal)
+            handled[statKey] = true
+        end
+    end
+
+    -- Append any custom stats not in canonical list
+    for statKey, val in pairs(weights) do
+        if not handled[statKey] then
+            local num = tonumber(val)
+            if num and num ~= 0 then
+                local pawnKey = StatCalc.PAWN_STAT_EXPORT_KEYS[statKey] or statKey
+                local formattedVal = string.format("%.2f", num):gsub("%.?0+$", "")
+                table.insert(parts, pawnKey .. "=" .. formattedVal)
+            end
+        end
+    end
+
+    return string.format('( Pawn: v1: "%s": %s )', scaleName, table.concat(parts, ", "))
+end
+
+--- Universal export helper supporting "pawn", "simc", and "json"
+function StatCalc:ExportWeights(weights, arg2, arg3, class, specIdx)
+    local scaleName = "CGO Profile"
+    local format = "pawn"
+
+    if arg2 == "pawn" or arg2 == "simc" or arg2 == "json" then
+        format = arg2
+        scaleName = arg3 or scaleName
+    elseif arg3 == "pawn" or arg3 == "simc" or arg3 == "json" then
+        scaleName = arg2 or scaleName
+        format = arg3
+    elseif arg2 and type(arg2) == "string" then
+        scaleName = arg2
+    end
+    format = (format or "pawn"):lower()
+
+    if format == "pawn" then
+        return self:CreatePawnString(weights, scaleName, class)
+    elseif format == "simc" then
+        local lines = { "# CharacterGearOptimizer SimC Export: " .. scaleName }
+        for _, statKey in ipairs(StatCalc.PAWN_CANONICAL_ORDER) do
+            local val = tonumber(weights and weights[statKey])
+            if val and val ~= 0 then
+                table.insert(lines, string.format("%s=%.2f", statKey, val):gsub("%.?0+$", ""))
+            end
+        end
+        return table.concat(lines, "\n")
+    elseif format == "json" then
+        local entries = {}
+        for _, statKey in ipairs(StatCalc.PAWN_CANONICAL_ORDER) do
+            local val = tonumber(weights and weights[statKey])
+            if val and val ~= 0 then
+                local keyName = (StatCalc.PAWN_STAT_EXPORT_KEYS[statKey] or statKey):lower()
+                table.insert(entries, string.format('    "%s": %.2f', keyName, val))
+            end
+        end
+        return string.format('{\n  "name": "%s",\n  "weights": {\n%s\n  }\n}', scaleName, table.concat(entries, ",\n"))
+    end
+
+    return self:CreatePawnString(weights, scaleName, class)
+end
+
+--- Universal import parser supporting Pawn strings, JSON, SimC, and key=value pairs
+function StatCalc:ImportWeights(input)
+    if not input or type(input) ~= "string" or input == "" then
+        return nil, nil
+    end
+
+    local clean = input:match("^%s*(.-)%s*$")
+    local weights = {}
+    local scaleName = nil
+    local detectedFormat = "unknown"
+    local metadata = {}
+
+    -- 1. Try Pawn format
+    if clean:match('[Pp][Aa][Ww][Nn]:') or clean:match('^%(%s*[Pp][Aa][Ww][Nn]:') or clean:match('^%(%s*"') then
+        detectedFormat = "pawn"
+        local pWeights, pMeta, pName = self:ParsePawnString(clean)
+        if pWeights and next(pWeights) then
+            pMeta = pMeta or {}
+            pMeta.format = "pawn"
+            return pWeights, pMeta, pMeta.scaleName or pName, detectedFormat
+        end
+    end
+
+    -- 2. Try JSON format: { "key": 1.23 }
+    if clean:match('^{') and clean:match('}$') then
+        detectedFormat = "json"
+        scaleName = clean:match('"name"%s*:%s*"([^"]+)"')
+        for key, val in clean:gmatch('"([%w_]+)"%s*:%s*"?([%-]?%d+%.?%d*)"?') do
+            local num = tonumber(val)
+            local lkey = key:lower():gsub("[%s_%-]", "")
+            local internalKey = StatCalc.PAWN_STAT_IMPORT_MAP[lkey]
+            if num and internalKey then
+                weights[internalKey] = num
+            end
+        end
+        if next(weights) then
+            metadata.scaleName = scaleName
+            metadata.format = "json"
+            return weights, metadata, scaleName, detectedFormat
+        end
+    end
+
+    -- 3. Try SimC / key=value / INI format (e.g. Str=2.5, Agi=1.2 or multiline)
+    detectedFormat = "simc"
+    -- Strip comments
+    local stripped = clean:gsub('#[^\n]*', ''):gsub('//[^\n]*', '')
+    for key, val in stripped:gmatch('([%w_]+)%s*[:=]%s*([%-]?%d+%.?%d*)') do
+        local num = tonumber(val)
+        local lkey = key:lower():gsub("[%s_%-]", "")
+        local internalKey = StatCalc.PAWN_STAT_IMPORT_MAP[lkey]
+        if num and internalKey then
+            weights[internalKey] = num
+        end
+    end
+
+    if next(weights) then
+        metadata.format = "simc"
+        return weights, metadata, scaleName, detectedFormat
+    end
+
+    return nil, nil
+end
+
+-- Wire to addon global methods for DevTool and UI accessibility
+addon.ParsePawnString = function(self, input)
+    return StatCalc:ParsePawnString(input)
+end
+
+addon.CreatePawnString = function(self, weights, scaleName, metadata)
+    return StatCalc:CreatePawnString(weights, scaleName, metadata)
+end
+
+addon.ExportWeights = function(self, weights, scaleName, format)
+    return StatCalc:ExportWeights(weights, scaleName, format)
+end
+
+addon.ImportWeights = function(self, input)
+    return StatCalc:ImportWeights(input)
+end
+

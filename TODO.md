@@ -23,6 +23,6 @@
 - [x] DevTool global inspection (`CharacterGearOptimizer` table)
 
 ### Phase 4: Future Enhancements
-- [ ] Pawn string import and export parser
+- [x] Pawn string import and export parser
 - [ ] Multi-set simulation and item upgrade prediction
 - [ ] Cloud sync profile integration
