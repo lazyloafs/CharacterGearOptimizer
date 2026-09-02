@@ -1,0 +1,36 @@
+﻿## Interface: 110100, 11506, 40402, 30403, 20504, 30300
+## Title: |cffffd100CharacterGearOptimizer|r
+## Notes: Multi-version dynamic gear optimization, stat weight evaluator, and equipment manager.
+## Author: LazyLoafs
+## Version: 1.1.0
+## SavedVariables: CharacterGearOptimizerGlobalDB
+## SavedVariablesPerCharacter: CharacterGearOptimizerDB, LazyOptimizerDB
+## IconTexture: Interface/Icons/Inv_misc_gear_01
+## Category: Equipment
+## Group: CharacterGearOptimizer
+
+# Shared Calculations & Data
+Weights.lua
+StatCalculations.lua
+Classic.lua
+Mainline.lua
+
+# Core Engine & Database
+Core.lua
+Scanner.lua
+Optimizer.lua
+EquipManager.lua
+TooltipHook.lua
+
+# UI Framework & Modules
+UI.lua
+UI_Buttons.lua
+UI_StatsPanel.lua
+UI_Panel.lua
+SpecHUD.lua
+Options.lua
+MinimapButton.lua
+
+# Utility Modules
+Sellomatic.lua
+AutoRoller.lua
