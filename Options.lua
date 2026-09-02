@@ -202,6 +202,40 @@ function Options:CreatePanel()
     cbSellomatic:SetPoint("TOPLEFT", cbBank, "BOTTOMLEFT", 0, -8)
     table.insert(checkboxes, cbSellomatic)
 
+    local cbCloudSync = CreateCheckbox(panel, "Enable Account-Wide Cloud Auto-Sync for Profiles",
+        function()
+            local gdb = CharacterGearOptimizerGlobalDB or {}
+            return gdb.settings and gdb.settings.autoSync ~= false
+        end,
+        function(val)
+            if addon.CloudSync and addon.CloudSync.InitializeDatabase then
+                addon.CloudSync:InitializeDatabase()
+            end
+            CharacterGearOptimizerGlobalDB = CharacterGearOptimizerGlobalDB or {}
+            CharacterGearOptimizerGlobalDB.settings = CharacterGearOptimizerGlobalDB.settings or {}
+            CharacterGearOptimizerGlobalDB.settings.autoSync = val
+        end
+    )
+    cbCloudSync:SetPoint("TOPLEFT", cbSellomatic, "BOTTOMLEFT", 0, -8)
+    table.insert(checkboxes, cbCloudSync)
+
+    local cbCloudAutoPush = CreateCheckbox(panel, "Auto-Push Custom Profiles to Cloud on Save",
+        function()
+            local gdb = CharacterGearOptimizerGlobalDB or {}
+            return gdb.settings and gdb.settings.autoPushOnSave ~= false
+        end,
+        function(val)
+            if addon.CloudSync and addon.CloudSync.InitializeDatabase then
+                addon.CloudSync:InitializeDatabase()
+            end
+            CharacterGearOptimizerGlobalDB = CharacterGearOptimizerGlobalDB or {}
+            CharacterGearOptimizerGlobalDB.settings = CharacterGearOptimizerGlobalDB.settings or {}
+            CharacterGearOptimizerGlobalDB.settings.autoPushOnSave = val
+        end
+    )
+    cbCloudAutoPush:SetPoint("TOPLEFT", cbCloudSync, "BOTTOMLEFT", 0, -8)
+    table.insert(checkboxes, cbCloudAutoPush)
+
     -- Sliders: HUD Scale and Opacity
     local sliderScale = CreateSlider(panel, "Spec HUD Scale", 50, 150, 5,
         function() return CharacterGearOptimizerDB and CharacterGearOptimizerDB.hudScale or 100 end,
@@ -214,7 +248,7 @@ function Options:CreatePanel()
         end,
         function(val) return string.format("%d%%", val) end
     )
-    sliderScale:SetPoint("TOPLEFT", cbSellomatic, "BOTTOMLEFT", 12, -28)
+    sliderScale:SetPoint("TOPLEFT", cbCloudAutoPush, "BOTTOMLEFT", 12, -28)
     table.insert(sliders, sliderScale)
 
     local sliderAlpha = CreateSlider(panel, "HUD Opacity", 20, 100, 5,
@@ -254,6 +288,29 @@ function Options:CreatePanel()
         CharacterGearOptimizerDB = CharacterGearOptimizerDB or {}
         CharacterGearOptimizerDB.specHUD = nil
         print("|cFFFFD700CGO:|r Spec HUD position reset to center.")
+    end)
+
+    local btnCloud = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate")
+    btnCloud:SetSize(160, 26)
+    btnCloud:SetPoint("TOPLEFT", btnOpen, "BOTTOMLEFT", 0, -8)
+    btnCloud:SetText("Cloud Profile Manager")
+    btnCloud:SetScript("OnClick", function()
+        if addon.OpenCloudSync then
+            addon:OpenCloudSync()
+        elseif addon.CloudSync and addon.CloudSync.OpenDialog then
+            addon.CloudSync:OpenDialog()
+        end
+    end)
+
+    local btnSyncNow = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate")
+    btnSyncNow:SetSize(160, 26)
+    btnSyncNow:SetPoint("LEFT", btnCloud, "RIGHT", 16, 0)
+    btnSyncNow:SetText("Sync to Cloud Now")
+    btnSyncNow:SetScript("OnClick", function()
+        if addon.CloudSync then
+            addon.CloudSync:PushAllLocalProfiles()
+            addon.CloudSync:PullAllCloudProfiles()
+        end
     end)
 
     panel:SetScript("OnShow", function()

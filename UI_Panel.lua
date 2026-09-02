@@ -486,7 +486,7 @@ impTitle:SetText("|cFFFFD700Import Stat Weights|r")
 
 local impHint = importDialog:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
 impHint:SetPoint("TOP", impTitle, "BOTTOM", 0, -4)
-impHint:SetText("|cFFAAAAAAPaste Pawn, SimC, or JSON string below|r")
+impHint:SetText("|cFFAAAAAAPaste Pawn, SimC, JSON, or Cloud (!CGO1:...) string|r")
 
 local impScrollFrame = CreateFrame("ScrollFrame", "CGOImportScroll", importDialog, "UIPanelScrollFrameTemplate")
 impScrollFrame:SetPoint("TOPLEFT", importDialog, "TOPLEFT", 14, -54)
@@ -638,9 +638,49 @@ btnJSON:SetScript("OnClick", function()
     RefreshExportText()
 end)
 
+local btnCloud = CreateFrame("Button", nil, exportDialog, "UIPanelButtonTemplate")
+btnCloud:SetSize(60, 20)
+btnCloud:SetPoint("LEFT", btnJSON, "RIGHT", 6, 0)
+btnCloud:SetText("Cloud")
+btnCloud:SetScript("OnClick", function()
+    expCurrentFormat = "cloud"
+    RefreshExportText()
+end)
+
+local expPushCloud = CreateFrame("Button", nil, exportDialog, "UIPanelButtonTemplate")
+expPushCloud:SetSize(100, 22)
+expPushCloud:SetPoint("BOTTOMLEFT", exportDialog, "BOTTOMLEFT", 14, 10)
+expPushCloud:SetText("Push Cloud")
+expPushCloud:SetScript("OnClick", function()
+    local w = expWeights or customWeights or {}
+    local name = expProfileName or "Current"
+    if addon.PushProfileToCloud then
+        local ok, msg = addon:PushProfileToCloud(name, w, {
+            class = addon.currentClass,
+            specIdx = addon.currentSpecIdx,
+        })
+        if ok then
+            print("|cFFFFD700CharacterGearOptimizer:|r " .. tostring(msg))
+        else
+            print("|cFFFF4444CharacterGearOptimizer:|r " .. tostring(msg))
+        end
+    end
+end)
+
+local expOpenCloud = CreateFrame("Button", nil, exportDialog, "UIPanelButtonTemplate")
+expOpenCloud:SetSize(100, 22)
+expOpenCloud:SetPoint("LEFT", expPushCloud, "RIGHT", 6, 0)
+expOpenCloud:SetText("Cloud Library")
+expOpenCloud:SetScript("OnClick", function()
+    exportDialog:Hide()
+    if addon.OpenCloudSync then
+        addon:OpenCloudSync()
+    end
+end)
+
 local expClose = CreateFrame("Button", nil, exportDialog, "UIPanelButtonTemplate")
 expClose:SetSize(80, 22)
-expClose:SetPoint("BOTTOM", exportDialog, "BOTTOM", 0, 10)
+expClose:SetPoint("BOTTOMRIGHT", exportDialog, "BOTTOMRIGHT", -14, 10)
 expClose:SetText("Close")
 expClose:SetScript("OnClick", function() exportDialog:Hide() end)
 

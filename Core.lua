@@ -110,6 +110,10 @@ function addon:InitializeDatabase()
     LazyOptimizerDB = nil
     addon.db = db
 
+    if addon.CloudSync and addon.CloudSync.InitializeDatabase then
+        addon.CloudSync:InitializeDatabase()
+    end
+
     return db
 end
 
@@ -465,6 +469,115 @@ local function HandleSlashCommand(msg)
         return
     end
 
+    if command == "cloud" or command == "sync" then
+        local subCmd, arg = rest:match("^(%S*)%s*(.-)$")
+        subCmd = subCmd and subCmd:lower() or ""
+
+        if subCmd == "" or subCmd == "ui" or subCmd == "panel" or subCmd == "manager" then
+            if addon.OpenCloudSync then
+                addon:OpenCloudSync()
+            elseif addon.CloudSync and addon.CloudSync.OpenDialog then
+                addon.CloudSync:OpenDialog()
+            else
+                print("|cFFFFD700CGO:|r CloudSync module initializing...")
+            end
+            return
+        end
+
+        if subCmd == "sync" or command == "sync" then
+            if addon.CloudSync then
+                addon.CloudSync:PushAllLocalProfiles()
+                addon.CloudSync:PullAllCloudProfiles()
+            else
+                print("|cFFFFD700CGO:|r CloudSync module not loaded.")
+            end
+            return
+        end
+
+        if subCmd == "push" then
+            if addon.CloudSync then
+                local pName = arg ~= "" and arg or nil
+                addon.CloudSync:PushCurrentProfile(pName)
+            else
+                print("|cFFFFD700CGO:|r CloudSync module not loaded.")
+            end
+            return
+        end
+
+        if subCmd == "pull" then
+            if addon.CloudSync then
+                local pId = arg ~= "" and arg or nil
+                if not pId then
+                    print("|cFFFFD700CGO:|r Usage: /cgo cloud pull <profileId/name>")
+                    return
+                end
+                addon.CloudSync:PullProfile(pId, nil, true)
+            else
+                print("|cFFFFD700CGO:|r CloudSync module not loaded.")
+            end
+            return
+        end
+
+        if subCmd == "export" then
+            if addon.CloudSync then
+                if addon.OpenCloudSync then
+                    addon:OpenCloudSync()
+                end
+            else
+                print("|cFFFFD700CGO:|r CloudSync module not loaded.")
+            end
+            return
+        end
+
+        if subCmd == "import" then
+            if addon.CloudSync then
+                if arg ~= "" then
+                    local prof, err, fmt = addon.CloudSync:DecodeProfileFromString(arg)
+                    if prof then
+                        addon.CloudSync:PushProfile(prof)
+                        addon.CloudSync:PullProfile(prof.id, prof.name, true)
+                        print(string.format("|cFFFFD700CGO Cloud:|r Imported profile |cFF00FF00%s|r (%s) successfully!", prof.name, fmt or "cloud"))
+                    else
+                        print(string.format("|cFFFFD700CGO Cloud:|r Import failed: %s", err or "Invalid string"))
+                    end
+                else
+                    if addon.OpenCloudSync then addon:OpenCloudSync() end
+                end
+            else
+                print("|cFFFFD700CGO:|r CloudSync module not loaded.")
+            end
+            return
+        end
+
+        if subCmd == "list" then
+            if addon.CloudSync then
+                local profiles = addon.CloudSync:GetAllCloudProfiles()
+                if #profiles == 0 then
+                    print("|cFFFFD700CGO Cloud:|r No profiles found in Account Cloud Store.")
+                else
+                    print(string.format("|cFFFFD700CGO Cloud Profiles (%d):|r", #profiles))
+                    for i, p in ipairs(profiles) do
+                        local col = (addon.CLASS_COLORS and addon.CLASS_COLORS[p.class]) or "FFFFFF"
+                        print(string.format("  #%d: |cFF%s%s|r (%s - %s) [ID: %s] • %s",
+                            i, col, p.name or "Profile", p.class or "ALL", p.specName or "Spec", p.id, p.dateString or "Recent"))
+                    end
+                end
+            else
+                print("|cFFFFD700CGO:|r CloudSync module not loaded.")
+            end
+            return
+        end
+
+        print("|cFFFFD700CGO Cloud Commands:|r")
+        print("  |cff69ccf0/cgo cloud|r - Open Cloud Profile & Share Manager")
+        print("  |cff69ccf0/cgo cloud sync|r - Sync all local and account cloud profiles")
+        print("  |cff69ccf0/cgo cloud push [name]|r - Push active profile to account cloud")
+        print("  |cff69ccf0/cgo cloud pull <id>|r - Pull profile from account cloud")
+        print("  |cff69ccf0/cgo cloud list|r - List account cloud profiles")
+        print("  |cff69ccf0/cgo cloud import <string>|r - Import cloud share string")
+        return
+    end
+
     if command == "dev" then
         if _G.DevTool and _G.DevTool.AddData then
             _G.DevTool:AddData(addon, "CharacterGearOptimizer")
@@ -479,6 +592,8 @@ local function HandleSlashCommand(msg)
         print("|cFFFFD700CharacterGearOptimizer|r commands:")
         print("  |cff69ccf0/cgo|r or |cff69ccf0/cgo show|r - Toggle main gear panel")
         print("  |cff69ccf0/cgo config|r or |cff69ccf0/cgo opt|r - Open AddOn Settings menu")
+        print("  |cff69ccf0/cgo cloud|r - Open Cloud Profile & Share Manager")
+        print("  |cff69ccf0/cgo sync|r - Sync profiles with Account Cloud Store")
         print("  |cff69ccf0/cgo sim|r - Open Multi-Set Simulation & Upgrade Prediction UI")
         print("  |cff69ccf0/cgo upgrade|r - Find top item upgrades in your bags")
         print("  |cff69ccf0/cgo weak|r - List weakest equipped gear slots")
@@ -489,7 +604,7 @@ local function HandleSlashCommand(msg)
         print("  |cff69ccf0/cgo auto|r - Revert to auto-detect spec")
         print("  |cff69ccf0/cgo best|r - Scan bags for best gear")
         print("  |cff69ccf0/cgo import|r - Open stat weights import dialog")
-        print("  |cff69ccf0/cgo export [pawn|simc|json]|r - Open stat weights export dialog")
+        print("  |cff69ccf0/cgo export [pawn|simc|json|cloud]|r - Open stat weights export dialog")
         print("  |cff69ccf0/cgo pawn|r - Quick export weights in Pawn format")
         print("  |cff69ccf0/cgo autoroll|r - Toggle auto loot rolls")
         print("  |cff69ccf0/cgo dev|r - Register table in DevTool")

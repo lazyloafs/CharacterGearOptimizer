@@ -442,15 +442,15 @@ function StatCalc:CreatePawnString(weights, scaleName, metadata)
     return string.format('( Pawn: v1: "%s": %s )', scaleName, table.concat(parts, ", "))
 end
 
---- Universal export helper supporting "pawn", "simc", and "json"
+--- Universal export helper supporting "pawn", "simc", "json", and "cloud"
 function StatCalc:ExportWeights(weights, arg2, arg3, class, specIdx)
     local scaleName = "CGO Profile"
     local format = "pawn"
 
-    if arg2 == "pawn" or arg2 == "simc" or arg2 == "json" then
+    if arg2 == "pawn" or arg2 == "simc" or arg2 == "json" or arg2 == "cloud" then
         format = arg2
         scaleName = arg3 or scaleName
-    elseif arg3 == "pawn" or arg3 == "simc" or arg3 == "json" then
+    elseif arg3 == "pawn" or arg3 == "simc" or arg3 == "json" or arg3 == "cloud" then
         scaleName = arg2 or scaleName
         format = arg3
     elseif arg2 and type(arg2) == "string" then
@@ -458,7 +458,12 @@ function StatCalc:ExportWeights(weights, arg2, arg3, class, specIdx)
     end
     format = (format or "pawn"):lower()
 
-    if format == "pawn" then
+    if format == "cloud" then
+        if addon.CloudSync and addon.CloudSync.BuildProfileData and addon.CloudSync.EncodeProfileToString then
+            local profile = addon.CloudSync:BuildProfileData(scaleName, weights)
+            return addon.CloudSync:EncodeProfileToString(profile)
+        end
+    elseif format == "pawn" then
         return self:CreatePawnString(weights, scaleName, class)
     elseif format == "simc" then
         local lines = { "# CharacterGearOptimizer SimC Export: " .. scaleName }
@@ -484,7 +489,7 @@ function StatCalc:ExportWeights(weights, arg2, arg3, class, specIdx)
     return self:CreatePawnString(weights, scaleName, class)
 end
 
---- Universal import parser supporting Pawn strings, JSON, SimC, and key=value pairs
+--- Universal import parser supporting Pawn strings, JSON, SimC, Cloud Code, and key=value pairs
 function StatCalc:ImportWeights(input)
     if not input or type(input) ~= "string" or input == "" then
         return nil, nil
@@ -495,6 +500,19 @@ function StatCalc:ImportWeights(input)
     local scaleName = nil
     local detectedFormat = "unknown"
     local metadata = {}
+
+    -- 0. Try Cloud Code format: !CGO1:...
+    if clean:match("^!CGO1:") and clean:match("!$") then
+        if addon.CloudSync and addon.CloudSync.DecodeProfileFromString then
+            local profile, err, fmt = addon.CloudSync:DecodeProfileFromString(clean)
+            if profile and profile.weights and next(profile.weights) then
+                metadata = profile
+                metadata.format = "cloud"
+                metadata.scaleName = profile.name
+                return profile.weights, metadata, profile.name or "Cloud Profile", "cloud"
+            end
+        end
+    end
 
     -- 1. Try Pawn format
     if clean:match('[Pp][Aa][Ww][Nn]:') or clean:match('^%(%s*[Pp][Aa][Ww][Nn]:') or clean:match('^%(%s*"') then

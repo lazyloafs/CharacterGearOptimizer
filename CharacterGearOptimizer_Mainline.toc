@@ -17,6 +17,7 @@ Mainline.lua
 
 # Core Engine & Database
 Core.lua
+CloudSync.lua
 Scanner.lua
 Optimizer.lua
 Simulation.lua
