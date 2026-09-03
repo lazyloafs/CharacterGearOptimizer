@@ -43,8 +43,15 @@ end
 -- ============================================================================
 -- Helper: Create Slider
 -- ============================================================================
+-- Running counter so every slider gets a unique global name -- OptionsSliderTemplate's
+-- XML-defined Low/High/Text FontStrings are only auto-created (and reachable via
+-- _G[name.."Low"] etc.) when the frame itself has a real name; an anonymous frame
+-- (name = nil) makes slider:GetName() return nil, and nil .. "Low" throws
+-- "attempt to concatenate a nil value".
+local sliderNameCounter = 0
 local function CreateSlider(parent, label, minVal, maxVal, step, getFunc, setFunc, formatFunc)
-    local slider = CreateFrame("Slider", nil, parent, "OptionsSliderTemplate")
+    sliderNameCounter = sliderNameCounter + 1
+    local slider = CreateFrame("Slider", "CGOOptionsSlider" .. sliderNameCounter, parent, "OptionsSliderTemplate")
     slider:SetWidth(180)
     slider:SetHeight(16)
     slider:SetMinMaxValues(minVal, maxVal)

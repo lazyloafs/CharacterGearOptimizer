@@ -182,7 +182,11 @@ local function BuildStatsPanel()
     AddStat("Agility",   "agi")
     AddStat("Stamina",   "sta")
     AddStat("Intellect", "int")
-    AddStat("Spirit",    "spi")
+    -- Spirit was removed as a stat entirely in Legion (no longer exists on
+    -- gear or the character sheet); only meaningful on Classic-family clients.
+    if not addon.isMainline then
+        AddStat("Spirit", "spi")
+    end
     AddStat("Armor",     "armor")
     AddGap()
 
@@ -214,7 +218,13 @@ local function BuildStatsPanel()
     AddStat("Crit",         "spell_crit")
     AddStat("Hit",          "spell_hit")
     AddStat("Haste",        "spell_haste")
-    AddStat("MP5 (casting)","mp5")
+    -- MP5/mana regen-based casting was removed as a meaningful gear stat
+    -- well before Legion (mana users no longer itemize for it); GetManaRegen
+    -- still exists on Mainline but no longer reflects gear, so only show it
+    -- on Classic-family clients.
+    if not addon.isMainline then
+        AddStat("MP5 (casting)","mp5")
+    end
     AddGap()
 
     AddHeader("Defense")

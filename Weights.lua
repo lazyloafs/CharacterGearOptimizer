@@ -16,8 +16,7 @@ CharacterGearOptimizer.STAT_LABELS = {
     HIT = "Hit", SPELLHIT = "Spell Hit", CRIT = "Crit", SPELLCRIT = "Spell Crit", MELEECRIT = "Melee Crit", HASTE = "Haste", EXP = "Exp",
     DODGE = "Dodge", PARRY = "Parry", DEF = "Def", RESIL = "Resil",
     ARP = "ArP", BLOCK_RATING = "Block", BLOCK_VALUE = "BV",
-    ARMOR = "Armor", SPELL_PEN = "SPen", WEAPON_DPS = "Weapon DPS", PVP_POWER = "PvP Power",
-    PVE_POWER = "PvE Power",
+    ARMOR = "Armor", SPELL_PEN = "SPen", WEAPON_DPS = "Weapon DPS",
     META_SOCKET = "Meta", RED_SOCKET = "Socket", YELLOW_SOCKET = "Socket",
     BLUE_SOCKET = "Socket",
     -- Modern (Mainline/Retail) secondary stats -- removed on Classic-family
@@ -60,8 +59,6 @@ CharacterGearOptimizer.ITEM_STAT_MAP = {
     ["ITEM_MOD_MANA_REGENERATION_SHORT"]         = "MP5",
     ["ITEM_MOD_RANGED_ATTACK_POWER_SHORT"]       = "AP",
     ["ITEM_MOD_DAMAGE_PER_SECOND_SHORT"]         = "WEAPON_DPS",
-    ["ITEM_MOD_PVP_POWER_SHORT"]                 = "PVP_POWER",
-    -- Ascension custom modifiers (no stock GetItemStats key; tooltip-scanned)
 
     -- Modern (Mainline/Retail) secondary stat ratings. These API keys never
     -- appear in GetItemStats() results on Classic-family clients (the ratings
@@ -75,10 +72,6 @@ CharacterGearOptimizer.ITEM_STAT_MAP = {
     ["ITEM_MOD_CR_SPEED_SHORT"]                  = "SPEED",
 }
 
--- Ascension exposes PvE Power as a plain tooltip line ("Equip: Increases
--- PvE Power by 25."), so it never appears in GetItemStats. The scan patterns
--- below handle both powers; this alias keeps any future API key supported.
-CharacterGearOptimizer.ITEM_STAT_MAP["ITEM_MOD_PVE_POWER_SHORT"] = "PVE_POWER"
 -- ============================================================================
 -- TOOLTIP SCAN PATTERNS (for stats not returned by GetItemStats)
 -- ============================================================================
@@ -174,15 +167,6 @@ CharacterGearOptimizer.TOOLTIP_PATTERNS = {
     { pattern = "Increases your spell hit rating by (%d+)",   stat = "SPELLHIT" },
     { pattern = "%+(%d+) Spell Hit Rating",                   stat = "SPELLHIT" },
 
-    -- Ascension PvP Power
-    { pattern = "Increases.-[Pp][Vv][Pp] [Pp]ower.-by (%d+)", stat = "PVP_POWER" },
-    { pattern = "%+(%d+) [Pp][Vv][Pp] [Pp]ower",             stat = "PVP_POWER" },
-
-    -- Ascension PvE Power (e.g. "Equip: Increases PvE Power by 25.")
-    { pattern = "Increases.-[Pp][Vv][Ee] [Pp]ower.-by (%d+)", stat = "PVE_POWER" },
-    { pattern = "[Pp][Vv][Ee] [Pp]ower by (%d+)", stat = "PVE_POWER" },
-    { pattern = "%+(%d+) [Pp][Vv][Ee] [Pp]ower",             stat = "PVE_POWER" },
-
     -- Resilience Rating (fallback)
     { pattern = "Increases your resilience rating by (%d+)",  stat = "RESIL" },
     { pattern = "%+(%d+) Resilience Rating",                  stat = "RESIL" },
@@ -233,8 +217,6 @@ CharacterGearOptimizer.GEM_PATTERNS = {
     { pattern = "%+(%d+) Block Rating",            weight = "BLOCK_RATING", label = "Block" },
     { pattern = "%+(%d+) Block Value",             weight = "BLOCK_VALUE",  label = "BV" },
     { pattern = "(%d+) mana per 5 sec",            weight = "MP5",   label = "MP5" },
-    { pattern = "%+(%d+) [Pp][Vv][Pp] [Pp]ower",   weight = "PVP_POWER", label = "PvP Power" },
-    { pattern = "%+(%d+) [Pp][Vv][Ee] [Pp]ower",   weight = "PVE_POWER", label = "PvE Power" },
 }
 
 -- ============================================================================

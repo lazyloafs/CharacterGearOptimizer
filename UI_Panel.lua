@@ -1591,17 +1591,17 @@ if addon.isMainline then
     capResilCapped.label:Hide()
 end
 
--- Power priorities: maximize the checked power stat, ignore the unchecked one.
-local capPvpPower      = CreateCapCheckbox("PvpPower",      "|cFF00CCFFPvP Power|r",      "pvpPower",         capRow5, capColL)
-local capPvePower      = CreateCapCheckbox("PvePower",      "|cFF00CCFFPvE Power|r",      "pvePower",         capRow5, capColR)
+-- NOTE: "PvP Power" / "PvE Power" cap priorities were removed. Those stats
+-- only ever existed on the Ascension private server (custom, non-Blizzard
+-- gear modifiers) and have no equivalent on any real WoW client, so the
+-- checkboxes, weights, and scan patterns for them were deleted entirely.
+local capPvpMode = CreateCapCheckbox("PvpMode", "|cFF00CCFFPvP Mode|r  |cFF888888(PvP caps)|r", "pvpMode", capRow5, capColL)
 
-local capPvpMode = CreateCapCheckbox("PvpMode", "|cFF00CCFFPvP Mode|r  |cFF888888(PvP caps)|r", "pvpMode", capRow6, capColL)
-
-local capNot60 = CreateCapCheckbox("Not60", "|cFFCCCCCCNot 60|r  |cFF888888(prefer heirlooms)|r", "not60", capRow6, capColR)
+local capNot60 = CreateCapCheckbox("Not60", "|cFFCCCCCCNot 60|r  |cFF888888(prefer heirlooms)|r", "not60", capRow5, capColR)
 
 local capAutoRoll = CreateFrame("CheckButton", "CGOCap_AutoRoll", frame, "UICheckButtonTemplate")
 capAutoRoll:SetSize(22, 22)
-capAutoRoll:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", capColL, capRow7)
+capAutoRoll:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", capColL, capRow6)
 capAutoRoll.label = capAutoRoll:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
 capAutoRoll.label:SetPoint("LEFT", capAutoRoll, "RIGHT", 2, 0)
 capAutoRoll.label:SetText("|cFF00CCFFAuto Roll|r")
@@ -2316,10 +2316,6 @@ function addon:RestoreSession()
     if cbArmor    then cbArmor:SetChecked(caps.armorCapped or false) end
     if cbResil    then cbResil:SetChecked(caps.resilCapped or false) end
     if cbHaste    then cbHaste:SetChecked(caps.hasteCapped or false) end
-    local cbPvpPower = _G["CGOCap_PvpPower"]
-    if cbPvpPower then cbPvpPower:SetChecked(caps.pvpPower or false) end
-    local cbPvePower = _G["CGOCap_PvePower"]
-    if cbPvePower then cbPvePower:SetChecked(caps.pvePower or false) end
     local cbPvp = _G["CGOCap_PvpMode"]
     if cbPvp then cbPvp:SetChecked(caps.pvpMode or false) end
     local cbNot60 = _G["CGOCap_Not60"]

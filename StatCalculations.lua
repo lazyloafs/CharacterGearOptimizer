@@ -260,13 +260,7 @@ StatCalc.PAWN_STAT_IMPORT_MAP = {
     spell_penetration    = "SPELL_PEN",
     spellpen             = "SPELL_PEN",
 
-    -- Ascension / Retail / Misc Stats
-    pvppower             = "PVP_POWER",
-    pvp_power            = "PVP_POWER",
-    pvp                  = "PVP_POWER",
-    pvepower             = "PVE_POWER",
-    pve_power            = "PVE_POWER",
-    pve                  = "PVE_POWER",
+    -- Weapon DPS
     dps                  = "WEAPON_DPS",
     weapondps            = "WEAPON_DPS",
     weapon_dps           = "WEAPON_DPS",
@@ -302,10 +296,8 @@ StatCalc.PAWN_STAT_EXPORT_KEYS = {
     BLOCK_RATING = "BlockRating",
     BLOCK_VALUE  = "BlockValue",
     ARMOR        = "Armor",
-    SPELL_PEN    = "SpellPenetration",
-    PVP_POWER    = "PvPPower",
-    PVE_POWER    = "PvEPower",
-    WEAPON_DPS   = "Dps",
+        SPELL_PEN    = "SpellPenetration",
+        WEAPON_DPS   = "Dps",
     MASTERY      = "MasteryRating",
     VERSATILITY  = "Versatility",
 }
@@ -316,7 +308,7 @@ StatCalc.PAWN_CANONICAL_ORDER = {
     "HIT", "SPELLHIT", "CRIT", "SPELLCRIT", "MELEECRIT", "HASTE", "EXP",
     "DEF", "DODGE", "PARRY", "RESIL", "ARP",
     "BLOCK_RATING", "BLOCK_VALUE", "ARMOR", "SPELL_PEN",
-    "PVP_POWER", "PVE_POWER", "WEAPON_DPS", "MASTERY", "VERSATILITY"
+        "WEAPON_DPS", "MASTERY", "VERSATILITY"
 }
 
 addon.PAWN_STAT_IMPORT_MAP = StatCalc.PAWN_STAT_IMPORT_MAP

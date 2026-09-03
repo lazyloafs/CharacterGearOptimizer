@@ -756,18 +756,9 @@ function addon:PreferHeirloomsEnabled()
 end
 
 function addon:CompareOptimizerItems(a, b)
-    local caps = CharacterGearOptimizerDB and CharacterGearOptimizerDB.capPriorities or {}
-    -- Power checkboxes are absolute priorities: maximize total power before
-    -- comparing ordinary stat score or heirloom preference.
-    if caps.pvePower then
-        local ap = (a.stats and a.stats.PVE_POWER) or 0
-        local bp = (b.stats and b.stats.PVE_POWER) or 0
-        if ap ~= bp then return ap > bp end
-    elseif caps.pvpPower or caps.pvpMode then
-        local ap = (a.stats and a.stats.PVP_POWER) or 0
-        local bp = (b.stats and b.stats.PVP_POWER) or 0
-        if ap ~= bp then return ap > bp end
-    end
+    -- NOTE: PvP Power / PvE Power priority comparisons were removed along
+    -- with the rest of that feature -- those stats only existed on the
+    -- Ascension private server and have no equivalent on any real client.
     if self:PreferHeirloomsEnabled() then
         local ah = a.isHeirloom and 1 or 0
         local bh = b.isHeirloom and 1 or 0
@@ -910,11 +901,8 @@ function addon:RefreshAscensionHeroWeights(specIndex)
     spec.weights.MELEECRIT = spec.weights.CRIT
     spec.weights.HASTE = math.max(hasteEP, 0.15)
     spec.weights.ARP = 0.35
-    -- PvP Mode is offensive on Ascension: maximize PvP Power first.
-    local caps = CharacterGearOptimizerDB and CharacterGearOptimizerDB.capPriorities or {}
-    spec.weights.PVP_POWER = caps.pvpMode and 1000 or 0
-    self:ApplyPowerCapWeights(spec.weights)
-end
+        self:ApplyPowerCapWeights(spec.weights)
+    end
 
 -- Attack Power Healer (Path of Healing). Ascension talents convert primary
 -- stats into Healing Power:
@@ -966,27 +954,6 @@ function addon:RefreshHealerApWeights(spec)
 end
 
 -- ============================================================================
--- PvP / PvE POWER CAP PRIORITIES
--- Checked boxes force a dominant weight so gear with that power is maximized
--- ("get as much as possible"). Unchecked boxes zero the weight so power stats
--- never crowd out useful gear.
--- ============================================================================
-function addon:ApplyPowerCapWeights(weights)
-    if not weights then return end
-    local caps = CharacterGearOptimizerDB and CharacterGearOptimizerDB.capPriorities or {}
-    -- pvpMode implies PvP Power priority for profiles that don't set it above.
-    if caps.pvpPower or caps.pvpMode then
-        weights.PVP_POWER = math.max(weights.PVP_POWER or 0, 1000)
-    else
-        weights.PVP_POWER = 0
-    end
-    if caps.pvePower then
-        weights.PVE_POWER = 1000
-    else
-        weights.PVE_POWER = 0
-    end
-end
-
 -- Main Optimization Function
 function addon:GetBestGearForSpec(class, specIndex)
     if class == "HERO" then self:RefreshAscensionHeroWeights(specIndex) end

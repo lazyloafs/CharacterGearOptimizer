@@ -828,7 +828,12 @@ end
 local function SaveCheckboxStates()
   for i, category in ipairs(categories) do
       local checkbox = _G["SellOMatic_Checkbox".. category]
-      SellOMatic_Settings[category] = checkbox:GetChecked()
+      -- Checkboxes are only created lazily when the options panel is shown
+      -- (CreateCheckboxesForBlacklist runs on OnShow), so this can run before
+      -- they exist (e.g. during ADDON_LOADED). Guard against nil.
+      if checkbox then
+          SellOMatic_Settings[category] = checkbox:GetChecked()
+      end
   end
 end
 
@@ -837,7 +842,10 @@ local function LoadCheckboxStates()
   SellOMatic_Settings = SellOMatic_Settings or {}
   for i, category in ipairs(categories) do
       local checkbox = _G["SellOMatic_Checkbox".. category]
-      checkbox:SetChecked(SellOMatic_Settings[category] or false)
+      -- Same lazy-creation caveat as SaveCheckboxStates above.
+      if checkbox then
+          checkbox:SetChecked(SellOMatic_Settings[category] or false)
+      end
   end
   UpdateBlacklist() -- Ensure blacklist is updated based on loaded settings
 end

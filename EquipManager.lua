@@ -13,17 +13,24 @@ local PULL_WAIT_SECONDS = 0.5  -- wait for bankâ†’bag transfer to settle
 local equipFrame = CreateFrame("Frame")
 local acceptBindUntil = 0
 
+-- NOTE: "AUTOEQUIP_BIND_CONFIRM" is not a real Blizzard event (verified against
+-- retail EventRouting.lua) -- only EQUIP_BIND_CONFIRM, EQUIP_BIND_TRADEABLE_CONFIRM,
+-- and EQUIP_BIND_REFUNDABLE_CONFIRM exist. Registering it throws
+-- "Attempt to register unknown event" on modern clients, so only the real
+-- event is registered here.
 equipFrame:RegisterEvent("EQUIP_BIND_CONFIRM")
-equipFrame:RegisterEvent("AUTOEQUIP_BIND_CONFIRM")
+equipFrame:RegisterEvent("EQUIP_BIND_TRADEABLE_CONFIRM")
+equipFrame:RegisterEvent("EQUIP_BIND_REFUNDABLE_CONFIRM")
 equipFrame:SetScript("OnEvent", function(self, event, slot)
     -- Accept binding only for items equipped by CGO's own queue. Keep a short
-    -- grace window because Ascension may dispatch the confirmation one frame
-    -- after the final queued item has been processed.
+    -- grace window because the confirmation may dispatch one frame after the
+    -- final queued item has been processed.
     if (isEquipping or GetTime() <= acceptBindUntil) and EquipPendingItem and slot then
         EquipPendingItem(slot)
         if StaticPopup_Hide then
             StaticPopup_Hide("EQUIP_BIND")
-            StaticPopup_Hide("AUTOEQUIP_BIND")
+            StaticPopup_Hide("EQUIP_BIND_TRADEABLE")
+            StaticPopup_Hide("EQUIP_BIND_REFUNDABLE")
         end
     end
 end)

@@ -615,7 +615,15 @@ function CloudSync:PullAllCloudProfiles()
 end
 
 function CloudSync:AutoSync()
-    self:InitializeDatabase()
+    -- NOTE: AutoSync is only ever invoked from InitializeDatabase() itself
+    -- (when settings.autoSync is true). It must NOT call InitializeDatabase()
+    -- again here -- that previously caused infinite mutual recursion
+    -- (InitializeDatabase -> AutoSync -> InitializeDatabase -> ...) and a
+    -- guaranteed stack overflow on every login/reload with autoSync enabled
+    -- (the default). CharacterGearOptimizerGlobalDB is already guaranteed to
+    -- exist by the caller before AutoSync runs.
+    CharacterGearOptimizerGlobalDB = CharacterGearOptimizerGlobalDB or {}
+    CharacterGearOptimizerGlobalDB.cloudProfiles = CharacterGearOptimizerGlobalDB.cloudProfiles or {}
     local localStats = CharacterGearOptimizerDB and CharacterGearOptimizerDB.customStats or {}
     
     -- Push local profiles that are missing in cloud

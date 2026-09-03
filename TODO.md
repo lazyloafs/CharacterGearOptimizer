@@ -29,3 +29,11 @@
 
 ### Phase 5: Options UI Dropdown Controls & Optimization Preset Config
 - [x] In-game Options UI dropdown selectors (Active Profile / Spec Selector, Auto-Roll Policy, Optimization Strategy) and comprehensive settings control in `Options.lua`
+
+### Phase 6: Bug Fixes & Ascension-Legacy Cleanup (BugGrabber triage)
+- [x] Fixed invented `AUTOEQUIP_BIND_CONFIRM` event registration in `EquipManager.lua` (real events only: `EQUIP_BIND_CONFIRM`, `EQUIP_BIND_TRADEABLE_CONFIRM`, `EQUIP_BIND_REFUNDABLE_CONFIRM`); this also fixed a downstream `SaveSet is not a function` error in `Sellomatic.lua` caused by the aborted chunk
+- [x] Fixed `CloudSync.lua` infinite mutual recursion between `InitializeDatabase()` and `AutoSync()` (guaranteed stack overflow on login since `autoSync` defaults to true)
+- [x] Fixed `Options.lua` nil-concat crash in `CreateSlider` (anonymous frames have no `:GetName()`; now given unique real names)
+- [x] Fixed `Sellomatic.lua` nil checkbox index crash in `SaveCheckboxStates`/`LoadCheckboxStates` (checkboxes are created lazily on options-panel `OnShow`, but state load ran earlier on `ADDON_LOADED`)
+- [x] Hid deprecated Spirit/MP5 stat rows on Mainline/Midnight in `UI_StatsPanel.lua` (completed version-gating started in a prior pass)
+- [x] Fully removed PvP Power / PvE Power (Ascension private-server-only stats, no Blizzard equivalent on any client) from `Weights.lua`, `StatCalculations.lua`, `Scanner.lua`, `UI_Panel.lua`, and `Optimizer.lua`; legitimate PvP-vs-PvE cap-priority toggle (`pvpMode`, distinct Blizzard PvP hit/expertise/armor cap constants) was kept

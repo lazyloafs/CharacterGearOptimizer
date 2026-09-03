@@ -174,7 +174,7 @@ function CharacterGearOptimizer:ExtractItemStats(itemLink, sourceTooltip)
         stats["_WSKILL"] = nil
     end
 
-    if self.DebugLog then self:DebugLog(string.format("SCAN %s PVE=%s", tostring(itemLink), tostring(stats.PVE_POWER or 0))) end
+    if self.DebugLog then self:DebugLog(string.format("SCAN %s", tostring(itemLink))) end
     return stats
 
 end
@@ -284,7 +284,7 @@ function CharacterGearOptimizer:BuildBreakdown(stats, specData)
         "MASTERY", "VERSATILITY", "AVOIDANCE", "LEECH", "SPEED",
         "DEF", "DODGE", "PARRY", "RESIL",
         "BLOCK_RATING", "BLOCK_VALUE", "ARMOR", "ARP", "SPELL_PEN",
-        "PVP_POWER", "PVE_POWER", "WEAPON_DPS",
+        "WEAPON_DPS",
     }
 
     for _, stat in ipairs(order) do
