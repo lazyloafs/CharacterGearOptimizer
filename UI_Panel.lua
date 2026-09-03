@@ -1580,6 +1580,17 @@ local capArmorCapped   = CreateCapCheckbox("ArmorCapped",   "|cFFCCCCCCArmor Cap
 local capResilCapped   = CreateCapCheckbox("ResilCapped",   "|cFFCCCCCCResilience|r",     "resilCapped",      capRow4, capColL)
 local capHasteCapped   = CreateCapCheckbox("HasteCapped",   "|cFFCCCCCCHaste Cap|r",      "hasteCapped",      capRow4, capColR)
 
+-- Expertise and Resilience no longer exist as gear stats on Mainline
+-- (Expertise folded into Hit in Legion; Resilience removed in MoP), so
+-- CheckCap() always reports "no cap" for them there. Hide the checkboxes
+-- entirely on Retail to avoid a confusing, always-inert control.
+if addon.isMainline then
+    capExpCapped:Hide()
+    capExpCapped.label:Hide()
+    capResilCapped:Hide()
+    capResilCapped.label:Hide()
+end
+
 -- Power priorities: maximize the checked power stat, ignore the unchecked one.
 local capPvpPower      = CreateCapCheckbox("PvpPower",      "|cFF00CCFFPvP Power|r",      "pvpPower",         capRow5, capColL)
 local capPvePower      = CreateCapCheckbox("PvePower",      "|cFF00CCFFPvE Power|r",      "pvePower",         capRow5, capColR)

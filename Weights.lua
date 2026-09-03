@@ -20,6 +20,10 @@ CharacterGearOptimizer.STAT_LABELS = {
     PVE_POWER = "PvE Power",
     META_SOCKET = "Meta", RED_SOCKET = "Socket", YELLOW_SOCKET = "Socket",
     BLUE_SOCKET = "Socket",
+    -- Modern (Mainline/Retail) secondary stats -- removed on Classic-family
+    -- clients, so these keys are only ever populated when addon.isMainline.
+    MASTERY = "Mastery", VERSATILITY = "Vers", AVOIDANCE = "Avoid",
+    LEECH = "Leech", SPEED = "Speed",
 }
 
 -- ============================================================================
@@ -58,6 +62,17 @@ CharacterGearOptimizer.ITEM_STAT_MAP = {
     ["ITEM_MOD_DAMAGE_PER_SECOND_SHORT"]         = "WEAPON_DPS",
     ["ITEM_MOD_PVP_POWER_SHORT"]                 = "PVP_POWER",
     -- Ascension custom modifiers (no stock GetItemStats key; tooltip-scanned)
+
+    -- Modern (Mainline/Retail) secondary stat ratings. These API keys never
+    -- appear in GetItemStats() results on Classic-family clients (the ratings
+    -- don't exist pre-Legion), so it's safe to register them unconditionally
+    -- here -- they simply stay unused/empty outside of Retail gear scans.
+    ["ITEM_MOD_MASTERY_RATING_SHORT"]            = "MASTERY",
+    ["ITEM_MOD_VERSATILITY"]                     = "VERSATILITY",
+    ["ITEM_MOD_VERSATILITY_RATING_SHORT"]        = "VERSATILITY",
+    ["ITEM_MOD_CR_AVOIDANCE_SHORT"]              = "AVOIDANCE",
+    ["ITEM_MOD_CR_LIFESTEAL_SHORT"]              = "LEECH",
+    ["ITEM_MOD_CR_SPEED_SHORT"]                  = "SPEED",
 }
 
 -- Ascension exposes PvE Power as a plain tooltip line ("Equip: Increases
@@ -987,6 +1002,43 @@ do
                 w.HIT  = math.max(w.HIT or 0, w.SPELLHIT or 0)
                 w.CRIT = math.max(w.CRIT or 0, w.SPELLCRIT or 0, w.MELEECRIT or 0)
                 w.SP   = math.max(w.SP or 0, w.HEAL or 0)
+            end
+        end
+    end
+end
+
+-- ============================================================================
+-- MAINLINE (RETAIL) SECONDARY STAT OVERRIDE
+-- CLASS_SPECS above is WotLK-indexed and has no notion of Mastery,
+-- Versatility, Avoidance, Leech, or Speed -- ratings that don't exist
+-- pre-Legion. On a Mainline client, DetectSpec() still indexes CLASS_SPECS
+-- by GetSpecialization() (1-4), so every entry keeps its class/role/name and
+-- primary-stat weights (STR/AGI/INT/AP/SP/etc. already fit Retail fine); we
+-- only need to layer in generic, role-based secondary-stat weights here and
+-- zero out ratings that were removed from the game (Expertise/Defense/
+-- Resilience/Block). These are intentionally generic fallbacks (not per-spec
+-- sims) since exact Retail spec weighting is outside this addon's scope.
+if CharacterGearOptimizer.isMainline then
+    local MAINLINE_ROLE_SECONDARY = {
+        tank      = { MASTERY = 1.2, VERSATILITY = 1.1, AVOIDANCE = 1.4, HASTE = 0.8, CRIT = 0.6, LEECH = 0.7, SPEED = 0.3 },
+        healer    = { MASTERY = 1.2, VERSATILITY = 1.0, HASTE = 1.3, CRIT = 0.9, LEECH = 0.2, SPEED = 0.3 },
+        melee_dps = { MASTERY = 1.3, VERSATILITY = 1.0, HASTE = 1.2, CRIT = 1.2, LEECH = 0.3, SPEED = 0.3 },
+        ranged_dps= { MASTERY = 1.3, VERSATILITY = 1.0, HASTE = 1.2, CRIT = 1.2, LEECH = 0.3, SPEED = 0.3 },
+        caster_dps= { MASTERY = 1.3, VERSATILITY = 1.0, HASTE = 1.2, CRIT = 1.2, LEECH = 0.3, SPEED = 0.3 },
+    }
+    for _, specs in pairs(CharacterGearOptimizer.CLASS_SPECS) do
+        for _, spec in pairs(specs) do
+            local w = spec.weights
+            if w then
+                -- Ratings removed from the game entirely (Legion+); zero them
+                -- so leftover WotLK weights never influence Mainline scoring.
+                w.EXP, w.DEF, w.RESIL, w.BLOCK_RATING, w.BLOCK_VALUE = 0, 0, 0, 0, 0
+                local secondary = MAINLINE_ROLE_SECONDARY[spec.role] or MAINLINE_ROLE_SECONDARY.melee_dps
+                for stat, value in pairs(secondary) do
+                    if not w[stat] or w[stat] == 0 then
+                        w[stat] = value
+                    end
+                end
             end
         end
     end

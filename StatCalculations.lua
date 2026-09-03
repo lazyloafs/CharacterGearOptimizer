@@ -123,7 +123,16 @@ end
 function StatCalc:CheckCap(statKey, currentValue, specData)
     local R = addon.RATING or DEFAULT_RATING
     currentValue = currentValue or 0
-    
+
+    -- Hit/Expertise/Defense/Resilience ratings were all removed from the
+    -- game on Mainline (Legion secondary-stat squish removed Hit/Expertise;
+    -- Defense/Resilience were removed even earlier, in Cataclysm/MoP). None
+    -- of these caps apply to a Retail character, so report "no cap" rather
+    -- than reusing stale WotLK cap values against modern stat values.
+    if addon.isMainline then
+        return false, 0, 0
+    end
+
     if statKey == "HIT" or statKey == "SPELLHIT" then
         local cap = (specData and specData.caps and specData.caps.HIT) or R.MELEE_HIT_CAP_PCT or 8
         local capped = currentValue >= cap

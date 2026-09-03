@@ -9,15 +9,18 @@
 ## Category: Equipment
 ## Group: CharacterGearOptimizer
 
+# Core Engine & Database
+# Core.lua must load first: it sets addon.isMainline/isClassic/isVanilla/
+# isTBC/isWrath/isCata, which Weights.lua/StatCalculations.lua/Classic.lua/
+# Mainline.lua all branch on at file-load time (not just inside functions).
+Core.lua
+CloudSync.lua
+
 # Shared Calculations & Data
 Weights.lua
 StatCalculations.lua
 Classic.lua
 Mainline.lua
-
-# Core Engine & Database
-Core.lua
-CloudSync.lua
 Scanner.lua
 Optimizer.lua
 Simulation.lua

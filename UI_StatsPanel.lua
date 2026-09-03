@@ -194,7 +194,11 @@ local function BuildStatsPanel()
     AddStat("Crit",         "melee_crit")
     AddStat("Hit",          "melee_hit")
     AddStat("Haste",        "melee_haste")
-    AddStat("Expertise",    "expertise")
+    -- Expertise was folded into Hit and removed as a gear stat in Legion;
+    -- only meaningful (and only populated) on Classic-family clients.
+    if not addon.isMainline then
+        AddStat("Expertise", "expertise")
+    end
     AddGap()
 
     AddHeader("Ranged")
@@ -214,13 +218,25 @@ local function BuildStatsPanel()
     AddGap()
 
     AddHeader("Defense")
-    AddStat("Defense",     "defense")
     AddStat("Dodge",       "dodge")
     AddStat("Parry",       "parry")
     AddStat("Block",       "block")
-    AddStat("Block Value", "block_val")
-    AddStat("Resilience",  "resil")
-    AddStat("Avoidance",   "avoidance")
+    if addon.isMainline then
+        -- Defense skill, Block Value, and Resilience were all removed as
+        -- gear stats (Defense/Resilience in Cataclysm/MoP, Block Value
+        -- reworked into flat Block% in Legion). Avoidance/Mastery/
+        -- Versatility/Leech/Speed are the modern secondary stats instead.
+        AddStat("Mastery",      "mastery")
+        AddStat("Versatility",  "versatility")
+        AddStat("Avoidance",    "avoidance")
+        AddStat("Leech",        "leech")
+        AddStat("Speed",        "speed")
+    else
+        AddStat("Defense",     "defense")
+        AddStat("Block Value", "block_val")
+        AddStat("Resilience",  "resil")
+        AddStat("Avoidance",   "avoidance")
+    end
     AddGap()
 
     AddHeader("Resistances")
@@ -268,7 +284,11 @@ local function UpdateStats_Inner()
         w.armor.value:SetText(fmt("%.0f", eff))
         local reduction = 0
         if PaperDollFrame_GetArmorReduction then
-            reduction = PaperDollFrame_GetArmorReduction(eff, UnitLevel("player"))
+            -- Modern Retail scales armor reduction off UnitEffectiveLevel
+            -- (accounts for level scaling zones); Classic-family clients
+            -- don't have that API, so fall back to UnitLevel there.
+            local level = (UnitEffectiveLevel and UnitEffectiveLevel("player")) or UnitLevel("player")
+            reduction = PaperDollFrame_GetArmorReduction(eff, level)
         end
         w.armor.tipTitle = fmt("Armor %d", eff)
         w.armor.tipLines = { fmt("%.1f%% Physical Damage Reduction", reduction) }
@@ -334,7 +354,9 @@ local function UpdateStats_Inner()
         w.melee_haste.tipTitle = fmt("Melee Haste %.2f%%", bonus)
         w.melee_haste.tipLines = { fmt("%d Rating = %.2f%% Haste", rating, bonus) }
     end
-    if w.expertise then
+    -- Expertise no longer exists as a gear stat on Mainline (folded into
+    -- Hit in Legion); the row itself isn't built there (see BuildStatsPanel).
+    if w.expertise and not addon.isMainline then
         if GetExpertise then
             local exp, ohExp = GetExpertise()
             local rating = GetCombatRating(CR_EXPERTISE)
@@ -436,81 +458,145 @@ local function UpdateStats_Inner()
     end
 
     ---------- DEFENSE ----------
-    if w.defense then
-        if UnitDefense then
-            local base, mod = UnitDefense("player")
-            local total = base + mod
-            local rating = GetCombatRating(CR_DEFENSE_SKILL)
-            local rBonus = GetCombatRatingBonus(CR_DEFENSE_SKILL)
-            w.defense.value:SetText(fmt("%.0f (%d)", total, rating))
-            w.defense.tipTitle = fmt("Defense %.0f", total)
-            w.defense.tipLines = { fmt("Base: %d", base),
-                                    fmt("%d Rating = %.1f Defense", rating, rBonus) }
-        else
-            w.defense.value:SetText("N/A")
-        end
-    end
+    -- Dodge/Parry/Block chance APIs still exist and are meaningful on every
+    -- version (Dodge/Parry come from Agility/base stats now on Mainline
+    -- rather than gear rating; Block chance still needs a shield equipped).
     if w.dodge then
         local chance = GetDodgeChance()
-        local rating = GetCombatRating(CR_DODGE)
-        local bonus  = GetCombatRatingBonus(CR_DODGE)
-        w.dodge.value:SetText(fmt("(%d) %.2f%%", rating, chance))
+        w.dodge.value:SetText(fmt("%.2f%%", chance))
         w.dodge.tipTitle = fmt("Dodge %.2f%%", chance)
-        w.dodge.tipLines = { fmt("%d Rating = %.2f%% Dodge", rating, bonus) }
+        if addon.isMainline then
+            w.dodge.tipLines = { "No longer scales with gear rating (Legion+)" }
+        else
+            local rating = GetCombatRating(CR_DODGE)
+            local bonus  = GetCombatRatingBonus(CR_DODGE)
+            w.dodge.value:SetText(fmt("(%d) %.2f%%", rating, chance))
+            w.dodge.tipLines = { fmt("%d Rating = %.2f%% Dodge", rating, bonus) }
+        end
     end
     if w.parry then
         local chance = GetParryChance()
-        local rating = GetCombatRating(CR_PARRY)
-        local bonus  = GetCombatRatingBonus(CR_PARRY)
-        w.parry.value:SetText(fmt("(%d) %.2f%%", rating, chance))
+        w.parry.value:SetText(fmt("%.2f%%", chance))
         w.parry.tipTitle = fmt("Parry %.2f%%", chance)
-        w.parry.tipLines = { fmt("%d Rating = %.2f%% Parry", rating, bonus) }
+        if addon.isMainline then
+            w.parry.tipLines = { "No longer scales with gear rating (Legion+)" }
+        else
+            local rating = GetCombatRating(CR_PARRY)
+            local bonus  = GetCombatRatingBonus(CR_PARRY)
+            w.parry.value:SetText(fmt("(%d) %.2f%%", rating, chance))
+            w.parry.tipLines = { fmt("%d Rating = %.2f%% Parry", rating, bonus) }
+        end
     end
     if w.block then
         local chance = GetBlockChance()
-        local rating = GetCombatRating(CR_BLOCK)
-        local bonus  = GetCombatRatingBonus(CR_BLOCK)
-        w.block.value:SetText(fmt("(%d) %.2f%%", rating, chance))
+        w.block.value:SetText(fmt("%.2f%%", chance))
         w.block.tipTitle = fmt("Block %.2f%%", chance)
-        w.block.tipLines = { fmt("%d Rating = %.2f%% Block", rating, bonus) }
+        if addon.isMainline then
+            w.block.tipLines = { "Requires a shield equipped" }
+        else
+            local rating = GetCombatRating(CR_BLOCK)
+            local bonus  = GetCombatRatingBonus(CR_BLOCK)
+            w.block.value:SetText(fmt("(%d) %.2f%%", rating, chance))
+            w.block.tipLines = { fmt("%d Rating = %.2f%% Block", rating, bonus) }
+        end
     end
-    if w.block_val then
-        local bv = GetShieldBlock and GetShieldBlock() or 0
-        w.block_val.value:SetText(fmt("%.0f", bv))
-        w.block_val.tipTitle = fmt("Block Value %d", bv)
-        w.block_val.tipLines = { "Damage blocked by your shield" }
-    end
-    if w.resil then
-        -- 3.3.5: resilience = CR_CRIT_TAKEN_MELEE (15); CR_RESILIENCE_CRIT_TAKEN doesn't exist
-        local crResil = CR_RESILIENCE_CRIT_TAKEN or CR_CRIT_TAKEN_MELEE or 15
-        local rating = GetCombatRating(crResil)
-        local bonus  = GetCombatRatingBonus(crResil)
-        w.resil.value:SetText(fmt("(%d) %.2f%%", rating, bonus))
-        w.resil.tipTitle = fmt("Resilience %d", rating)
-        w.resil.tipLines = { fmt("Reduces crit chance by %.2f%%", bonus),
-                              fmt("Reduces crit damage by %.2f%%", math.min(bonus * 2, 25)) }
-    end
-    if w.avoidance then
-        local defBase, defMod = 350, 0
-        if UnitDefense then defBase, defMod = UnitDefense("player") end
-        local totalDef     = defBase + defMod
-        local playerLvl    = UnitLevel("player")
-        local atkSkill     = (playerLvl + 3) * 5
-        local missPct      = 5 - (atkSkill - totalDef) * 0.04
-        local dodgePct     = GetDodgeChance()
-        local parryPct     = GetParryChance()
-        local blockPct     = GetBlockChance()
-        local total        = missPct + dodgePct + parryPct + blockPct
-        local crushGap     = 102.4 - total
-        w.avoidance.value:SetText(fmt("%.2f%%", total))
-        w.avoidance.tipTitle = fmt("Total Avoidance %.2f%%", total)
-        w.avoidance.tipLines = {
-            fmt("Miss: %.2f%%",  missPct),
-            fmt("Dodge: %.2f%%", dodgePct),
-            fmt("Parry: %.2f%%", parryPct),
-            fmt("Block: %.2f%%", blockPct),
-            fmt("Crushing gap: %.2f%%", math.max(0, crushGap)),
-        }
+
+    if addon.isMainline then
+        -- Modern (Retail) secondary stats. Mastery/Versatility/Avoidance/
+        -- Leech/Speed replaced Defense/Resilience/Block Value/Expertise.
+        if w.mastery and GetMasteryEffect then
+            local effect, coefficient = GetMasteryEffect()
+            local rating = GetCombatRating(CR_MASTERY)
+            w.mastery.value:SetText(fmt("(%d) %.2f%%", rating, effect or 0))
+            w.mastery.tipTitle = fmt("Mastery %.2f%%", effect or 0)
+            w.mastery.tipLines = { fmt("%d Rating", rating),
+                                    fmt("Coefficient: %.4f", coefficient or 0) }
+        end
+        if w.versatility and GetCombatRating and GetVersatilityBonus then
+            local ratingDone  = GetCombatRating(CR_VERSATILITY_DAMAGE_DONE)
+            local bonusDone    = (GetCombatRatingBonus(CR_VERSATILITY_DAMAGE_DONE) or 0)
+                                + (GetVersatilityBonus(CR_VERSATILITY_DAMAGE_DONE) or 0)
+            local bonusTaken   = (GetCombatRatingBonus(CR_VERSATILITY_DAMAGE_TAKEN) or 0)
+                                + (GetVersatilityBonus(CR_VERSATILITY_DAMAGE_TAKEN) or 0)
+            w.versatility.value:SetText(fmt("(%d) %.2f%%", ratingDone, bonusDone))
+            w.versatility.tipTitle = fmt("Versatility %.2f%%", bonusDone)
+            w.versatility.tipLines = { fmt("%.2f%% increased damage/healing", bonusDone),
+                                        fmt("%.2f%% reduced damage taken", bonusTaken) }
+        end
+        if w.avoidance and GetAvoidance then
+            local avoid = GetAvoidance()
+            local rating = GetCombatRating(CR_AVOIDANCE)
+            w.avoidance.value:SetText(fmt("(%d) %.2f%%", rating, avoid or 0))
+            w.avoidance.tipTitle = fmt("Avoidance %.2f%%", avoid or 0)
+            w.avoidance.tipLines = { "Reduces damage taken from area effects" }
+        end
+        if w.leech and GetLifesteal then
+            local leech = GetLifesteal()
+            local rating = GetCombatRating(CR_LIFESTEAL)
+            w.leech.value:SetText(fmt("(%d) %.2f%%", rating, leech or 0))
+            w.leech.tipTitle = fmt("Leech %.2f%%", leech or 0)
+            w.leech.tipLines = { "Heals you for a portion of damage/healing done" }
+        end
+        if w.speed and GetSpeed then
+            local speedPct = GetSpeed()
+            local rating = GetCombatRating(CR_SPEED)
+            w.speed.value:SetText(fmt("(%d) %.2f%%", rating, speedPct or 0))
+            w.speed.tipTitle = fmt("Speed %.2f%%", speedPct or 0)
+            w.speed.tipLines = { "Increases movement speed" }
+        end
+    else
+        if w.defense then
+            if UnitDefense then
+                local base, mod = UnitDefense("player")
+                local total = base + mod
+                local rating = GetCombatRating(CR_DEFENSE_SKILL)
+                local rBonus = GetCombatRatingBonus(CR_DEFENSE_SKILL)
+                w.defense.value:SetText(fmt("%.0f (%d)", total, rating))
+                w.defense.tipTitle = fmt("Defense %.0f", total)
+                w.defense.tipLines = { fmt("Base: %d", base),
+                                        fmt("%d Rating = %.1f Defense", rating, rBonus) }
+            else
+                w.defense.value:SetText("N/A")
+            end
+        end
+        if w.block_val then
+            local bv = GetShieldBlock and GetShieldBlock() or 0
+            w.block_val.value:SetText(fmt("%.0f", bv))
+            w.block_val.tipTitle = fmt("Block Value %d", bv)
+            w.block_val.tipLines = { "Damage blocked by your shield" }
+        end
+        if w.resil then
+            -- 3.3.5: resilience = CR_CRIT_TAKEN_MELEE (15); CR_RESILIENCE_CRIT_TAKEN doesn't exist
+            local crResil = CR_RESILIENCE_CRIT_TAKEN or CR_CRIT_TAKEN_MELEE or 15
+            local rating = GetCombatRating(crResil)
+            local bonus  = GetCombatRatingBonus(crResil)
+            w.resil.value:SetText(fmt("(%d) %.2f%%", rating, bonus))
+            w.resil.tipTitle = fmt("Resilience %d", rating)
+            w.resil.tipLines = { fmt("Reduces crit chance by %.2f%%", bonus),
+                                  fmt("Reduces crit damage by %.2f%%", math.min(bonus * 2, 25)) }
+        end
+        if w.avoidance then
+            local defBase, defMod = 350, 0
+            if UnitDefense then defBase, defMod = UnitDefense("player") end
+            local totalDef     = defBase + defMod
+            local playerLvl    = UnitLevel("player")
+            local atkSkill     = (playerLvl + 3) * 5
+            local missPct      = 5 - (atkSkill - totalDef) * 0.04
+            local dodgePct     = GetDodgeChance()
+            local parryPct     = GetParryChance()
+            local blockPct     = GetBlockChance()
+            local total        = missPct + dodgePct + parryPct + blockPct
+            local crushGap     = 102.4 - total
+            w.avoidance.value:SetText(fmt("%.2f%%", total))
+            w.avoidance.tipTitle = fmt("Total Avoidance %.2f%%", total)
+            w.avoidance.tipLines = {
+                fmt("Miss: %.2f%%",  missPct),
+                fmt("Dodge: %.2f%%", dodgePct),
+                fmt("Parry: %.2f%%", parryPct),
+                fmt("Block: %.2f%%", blockPct),
+                fmt("Crushing gap: %.2f%%", math.max(0, crushGap)),
+            }
+        end
     end
 
     ---------- RESISTANCES ----------

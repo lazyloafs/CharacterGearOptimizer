@@ -281,6 +281,7 @@ function CharacterGearOptimizer:BuildBreakdown(stats, specData)
         "STR", "AGI", "STA", "INT", "SPI",
         "AP", "FAP", "SP", "HEAL", "MP5",
         "HIT", "CRIT", "SPELLCRIT", "MELEECRIT", "HASTE", "EXP",
+        "MASTERY", "VERSATILITY", "AVOIDANCE", "LEECH", "SPEED",
         "DEF", "DODGE", "PARRY", "RESIL",
         "BLOCK_RATING", "BLOCK_VALUE", "ARMOR", "ARP", "SPELL_PEN",
         "PVP_POWER", "PVE_POWER", "WEAPON_DPS",
