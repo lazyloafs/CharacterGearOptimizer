@@ -954,8 +954,24 @@ local function CreateSlotButton(id, name, parent, anchor, x, y)
         insets = { left = 2, right = 2, top = 2, bottom = 2 },
     }, { 0.05, 0.02, 0.02, 0.8 }, { 0.55, 0.45, 0.25, 1 })
 
-    local btn = CreateFrame("Button", "CGOSlot"..id, border, "ItemButtonTemplate")
+    -- ItemButtonTemplate was removed from the modern retail XML templates.
+    -- Classic clients still provide it, so retain it there for native behavior.
+    -- NOTE: "addon.isMainline and nil or X" is NOT a valid ternary in Lua here,
+    -- because "isMainline and nil" always collapses to nil, so the expression
+    -- always evaluates to X regardless of isMainline. Use an explicit if/else.
+    local itemButtonTemplate
+    if not addon.isMainline then
+        itemButtonTemplate = "ItemButtonTemplate"
+    end
+    local btn = CreateFrame("Button", "CGOSlot"..id, border, itemButtonTemplate)
     btn:SetSize(SLOT_SIZE, SLOT_SIZE)
+    if addon.isMainline then
+        local icon = btn:CreateTexture(nil, "ARTWORK")
+        icon:SetAllPoints(btn)
+        icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
+        btn.icon = icon
+        btn.IconTexture = icon
+    end
     btn:SetPoint("CENTER", border, "CENTER", 0, 0)
     btn:SetID(id)
     btn:RegisterForClicks("LeftButtonUp", "RightButtonUp")
